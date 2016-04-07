@@ -32,23 +32,6 @@ public final class BranchSim {
 
     }
 
-    private static void printRes() {
-        double goodPerc = 0;
-        double badPerc = 0;
-        if (numLines != 0) {
-            goodPerc = (correctPredictions / numLines) * PERCENTAGE;
-            badPerc = (wrongPredictions / numLines) * PERCENTAGE;
-        }
-        System.out.println("Total " + (long) numLines);
-        System.out.println("Good " + (long) correctPredictions);
-        System.out.println("Bad " + (long) wrongPredictions);
-        System.out.print("Good% ");
-        System.out.printf("%.2f\n", goodPerc);
-        System.out.print("Bad% ");
-        System.out.printf("%.2f\n", badPerc);
-        System.out.println("Size " + (long) size);
-    }
-
     private static void alwaysTaken(Scanner xzScanner) {
         while (xzScanner.hasNextLine()) {
             String oneLine = xzScanner.nextLine();
@@ -172,65 +155,6 @@ public final class BranchSim {
         printRes();
     }
 
-    private static boolean checkSlots(String arg) {
-        int numSlots = 0;
-        try {
-            numSlots = Integer.parseInt(arg);
-        } catch (NumberFormatException e) {
-            System.err.println("Historynum not a number!");
-            System.exit(1);
-        }        
-        boolean res = true;
-        if (numSlots < 4 || numSlots > 65536) {
-            res = false;
-        } else if (!isTwosPower(numSlots)) {
-            res = false;
-        }
-        return res;
-    }
-
-    private static boolean checkHistory(String arg) {
-        int numHistory = 0;
-        try {
-            numHistory = Integer.parseInt(arg);
-        } catch (NumberFormatException e) {
-            System.err.println("Historynum not a number!");
-            System.exit(1);
-        }
-        boolean res = true;
-        if (numHistory < 4 || numHistory > 65536) {
-            res = false;
-        } else if (!isTwosPower(numHistory)) {
-            res = false;
-        }
-        return res;
-    }
-
-    private static boolean checkSteps(String arg) {
-        int numSteps = 0;
-        try {
-            numSteps = Integer.parseInt(arg);
-        } catch (NumberFormatException e) {
-            System.err.println("Steps not a number!");
-            System.exit(1);
-        }
-        boolean res = true;
-        if (numSteps < 4 || numSteps > 16) {
-            res = false;
-        } else if (!isTwosPower(numSteps)) {
-            res = false;
-        }
-        return res;
-    }
-
-    private static boolean isTwosPower(int num) {
-        if ((num & (num - 1)) == 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private static void bimodalPredictor(Scanner xzScanner, String[] args) {
         boolean slotValid = checkSlots(args[1]);
         boolean stepsValid = checkSteps(args[2]);
@@ -296,11 +220,42 @@ public final class BranchSim {
             checkCorrectness(actual, prediction);
             lineScanner.close();
         }
-        size = numSlots * (long) (Math.log(numSteps)) / (Math.log(2));
+        size = numSlots * (int) (Math.log(numSteps) / Math.log(2));
 
         printRes();
 
     }
+
+
+    private static void twolevelPredictor(Scanner xzScanner, String[] args) {
+        boolean slotValid = checkSlots(args[1]);
+        boolean historyValid = checkHistory(args[2]);
+        boolean typeValid = checkType(args[3]);
+        boolean stepsValid = checkSteps(args[4]);
+
+        int numSlots = Integer.parseInt(args[1]);
+        int historyWidth = Integer.parseInt(args[2]);
+        String type = args[3];
+        int numSteps = Integer.parseInt(args[4]);
+
+        if (!slotValid || !historyValid || !typeValid || !stepsValid) {
+            System.err.println("Invalid inputs to twolevel predictor!");
+            System.exit(1);            
+        }
+
+
+
+
+
+
+
+        printRes();
+
+    }
+
+    /**************************************/
+    /*Helper Methods*/
+    /**************************************/
 
     private static void checkCorrectness(boolean actual, boolean prediction) {
         if (actual == prediction) {
@@ -316,7 +271,7 @@ public final class BranchSim {
      * @param steps the number of steps for the saturation counter
      * @return true if decide to take the branch
      */
-    public static boolean setTaken(byte b, double steps) {
+    private static boolean setTaken(byte b, double steps) {
         boolean taken = true;
         if (b < (steps / 2)) {
             taken = false;
@@ -333,18 +288,112 @@ public final class BranchSim {
         }
     }
 
-    private static void twolevelPredictor(Scanner xzScanner, String[] args) {
-        boolean slotValid = checkSlots(args[1]);
-        boolean historyValid = checkHistory(args[2]);
-        boolean typeValid = checkType(args[3]);
-        boolean stepsValid = checkSteps(args[4]);
-        if (slotValid && historyValid
-            && typeValid && stepsValid) {
+    private static boolean checkSlots(String arg) {
+        int numSlots = 0;
+        try {
+            numSlots = Integer.parseInt(arg);
+        } catch (NumberFormatException e) {
+            System.err.println("Historynum not a number!");
+            System.exit(1);
+        }        
+        boolean res = true;
+        if (numSlots < 4 || numSlots > 65536) {
+            res = false;
+        }
+        if (!isTwosPower(numSlots)) {
+            res = false;
+        }
+        return res;
+    }
 
-        } else{
-            System.err.println("Invalid inputs to twolevel predictor!");
+    private static boolean checkHistory(String arg) {
+        int numHistory = 0;
+        try {
+            numHistory = Integer.parseInt(arg);
+        } catch (NumberFormatException e) {
+            System.err.println("Historynum not a number!");
             System.exit(1);
         }
+        boolean res = true;
+        if (numHistory < 4 || numHistory > 65536) {
+            res = false;
+        }
+        if (!isTwosPower(numHistory)) {
+            res = false;
+        }
+        return res;
+    }
+
+    private static boolean checkSteps(String arg) {
+        int numSteps = 0;
+        try {
+            numSteps = Integer.parseInt(arg);
+        } catch (NumberFormatException e) {
+            System.err.println("Steps not a number!");
+            System.exit(1);
+        }
+        boolean res = true;
+        if (numSteps < 4 || numSteps > 16) {
+            res = false;
+        }
+        if (!isTwosPower(numSteps)) {
+            res = false;
+        }
+        return res;
+    }
+
+    private static boolean isTwosPower(int num) {
+        if ((num & (num - 1)) == 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static void printRes() {
+        double goodPerc = 0;
+        double badPerc = 0;
+        if (numLines != 0) {
+            goodPerc = (correctPredictions / numLines) * PERCENTAGE;
+            badPerc = (wrongPredictions / numLines) * PERCENTAGE;
+        }
+        System.out.println("Total " + (long) numLines);
+        System.out.println("Good " + (long) correctPredictions);
+        System.out.println("Bad " + (long) wrongPredictions);
+        System.out.print("Good% ");
+        System.out.printf("%.2f\n", goodPerc);
+        System.out.print("Bad% ");
+        System.out.printf("%.2f\n", badPerc);
+        System.out.println("Size " + (long) size);
+    }
+
+    private static void executePredictor(String[] args, String command,
+                                         Scanner xzScanner) {        
+        if (command.equals("at")) {
+            alwaysTaken(xzScanner);
+        } else if (command.equals("nt")) {
+            neverTaken(xzScanner);
+        } else if (command.equals("btfn")) {
+            btfnPredictor(xzScanner);
+        } else if (command.equals("bimodal")) {
+            if (args.length == THREE) {
+                bimodalPredictor(xzScanner, args);
+            } else {
+                System.err.println("Wrong arguments!");
+                System.exit(1);
+            }
+        } else if (command.equals("twolevel")) {
+            if (args.length == FIVE) {
+                twolevelPredictor(xzScanner, args);
+            } else {
+                System.err.println("Wrong arguments!");
+                System.exit(1);
+            }
+        } else {
+            System.err.println("Wrong arguments!");
+            System.exit(1);
+        }
+
     }
 
     /**
@@ -359,32 +408,7 @@ public final class BranchSim {
         }
 
         Scanner xzScanner = new Scanner(System.in);
-
-        if (args[0].equals("at")) {
-            alwaysTaken(xzScanner);
-        } else if (args[0].equals("nt")) {
-            neverTaken(xzScanner);
-        } else if (args[0].equals("btfn")) {
-            btfnPredictor(xzScanner);
-        } else if (args[0].equals("bimodal")) {
-            if (args.length == THREE) {
-                bimodalPredictor(xzScanner, args);
-            } else {
-                System.err.println("Wrong arguments!");
-                System.exit(1);
-            }
-        } else if (args[0].equals("twolevel")) {
-            if (args.length == FIVE) {
-                twolevelPredictor(xzScanner, args);
-            } else {
-                System.err.println("Wrong arguments!");
-                System.exit(1);
-            }
-        } else {
-            System.err.println("Wrong arguments!");
-            System.exit(1);
-        }
-
+        executePredictor(args, args[0], xzScanner);
         xzScanner.close();
     }
 }
