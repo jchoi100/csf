@@ -17,22 +17,48 @@ import java.util.NoSuchElementException;
  */
 public final class BranchSim {
 
+    /** Total number of lines in .xz file. */
     private static double numLines = 0;
 
+    /** Number of correct predictions made. */
     private static double correctPredictions = 0;
+
+    /** Number of wrong predictions made. */
     private static double wrongPredictions = 0;
 
+    /** Size of the branch predictor in bits. */
     private static double size = 0;
 
+    /** Used to calculate percentage. */
     private static final double PERCENTAGE = 100.0;
-    private static final int HEX = 16;
+
+    /** Three. */
     private static final int THREE = 3;
+
+    /** Four. */
+    private static final int FOUR = 4;
+
+    /** Five. */
     private static final int FIVE = 5;
 
+    /** Sixteen. */
+    private static final int SIXTEEN = 16;
+
+    /** 2^16. */
+    private static final int TWOSIXTEEN = 65536;
+
+    /**
+     * Dummy constructor.
+     */
     private BranchSim() {
 
     }
 
+    /**
+     * Branch simulator with the "always taken" heuristic.
+     *
+     * @param xzScanner Scanner for input .xz file.
+     */
     private static void alwaysTaken(Scanner xzScanner) {
         while (xzScanner.hasNextLine()) {
             String oneLine = xzScanner.nextLine();
@@ -40,16 +66,16 @@ public final class BranchSim {
             String source = null;
             String destin = null;
             String result = null;
-            long sourceLong = 0;
-            long destinLong = 0;
+            int sourceInt = 0;
+            int destinInt = 0;
             try {
                 source = lineScanner.next();
                 destin = lineScanner.next();
                 result = lineScanner.next();
-                sourceLong = Long.parseLong(source, HEX);
-                destinLong = Long.parseLong(destin, HEX);
+                sourceInt = Integer.parseInt(source, SIXTEEN);
+                destinInt = Integer.parseInt(destin, SIXTEEN);
             } catch (NumberFormatException nfe) {
-                System.err.println("Invalid input format!");
+                System.err.println("Invalid input number format!");
                 System.exit(1);
             } catch (NoSuchElementException nee) {
                 System.err.println("Wrong number of inputs in a line!");
@@ -58,9 +84,9 @@ public final class BranchSim {
 
             numLines++;
 
-            if (result.equals("T")) {
+            if (result.equalsIgnoreCase("T")) {
                 correctPredictions++;
-            } else if (result.equals("N")) {
+            } else if (result.equalsIgnoreCase("N")) {
                 wrongPredictions++;
             } else {
                 System.err.println("Wrong result format!");
@@ -72,6 +98,10 @@ public final class BranchSim {
 
     }
 
+    /**
+     * Branch predictor for the "never taken" heuristic.
+     * @param xzScanner Scanner for the input .xz file.
+     */
     private static void neverTaken(Scanner xzScanner) {
         while (xzScanner.hasNextLine()) {
             String oneLine = xzScanner.nextLine();
@@ -79,25 +109,27 @@ public final class BranchSim {
             String source = null;
             String destin = null;
             String result = null;
-            long sourceLong = 0;
-            long destinLong = 0;
+            int sourceInt = 0;
+            int destinInt = 0;
             try {
                 source = lineScanner.next();
                 destin = lineScanner.next();
                 result = lineScanner.next();
-                sourceLong = Long.parseLong(source, HEX);
-                destinLong = Long.parseLong(destin, HEX);
+                sourceInt = Integer.parseInt(source, SIXTEEN);
+                destinInt = Integer.parseInt(destin, SIXTEEN);
             } catch (NumberFormatException nfe) {
-                System.err.println("Invalid input format!");
+                System.err.println("Invalid input number format!");
                 System.exit(1);
             } catch (NoSuchElementException nee) {
                 System.err.println("Wrong number of inputs in a line!");
                 System.exit(1);
             }
+
             numLines++;
-            if (result.equals("N")) {
+
+            if (result.equalsIgnoreCase("N")) {
                 correctPredictions++;
-            } else if (result.equals("T")) {
+            } else if (result.equalsIgnoreCase("T")) {
                 wrongPredictions++;
             } else {
                 System.err.println("Wrong result format!");
@@ -109,6 +141,10 @@ public final class BranchSim {
 
     }
 
+    /**
+     * Branch predictor for the "backwards take forwards not take" heuristic.
+     * @param xzScanner Scanner for the input .xz file.
+     */
     private static void btfnPredictor(Scanner xzScanner) {
         while (xzScanner.hasNextLine()) {
             String oneLine = xzScanner.nextLine();
@@ -123,8 +159,8 @@ public final class BranchSim {
                 source = lineScanner.next();
                 destin = lineScanner.next();
                 result = lineScanner.next();
-                sourceLong = Long.parseLong(source, HEX);
-                destinLong = Long.parseLong(destin, HEX);
+                sourceLong = Long.parseLong(source, SIXTEEN);
+                destinLong = Long.parseLong(destin, SIXTEEN);
 
                 if (sourceLong < destinLong) {
                     ourPrediction = "N";
@@ -153,21 +189,24 @@ public final class BranchSim {
 
     }
 
+    /**
+     * Dynamic bimodal branch predictor with given number of slots for the
+     * prediction table and the given number of steps for saturation counter.
+     * @param xzScanner Scanner for the input .xz file.
+     * @param args The input arguments to the program.
+     */
     private static void bimodalPredictor(Scanner xzScanner, String[] args) {
         boolean slotValid = checkSlots(args[1]);
         boolean stepsValid = checkSteps(args[2]);
         if (!slotValid || !stepsValid) {
             System.err.println("Invalid inputs to bimodal predictor!");
-            System.exit(1);           
+            System.exit(1);
         }
 
         int numSlots = Integer.parseInt(args[1]);
         int numSteps = Integer.parseInt(args[2]);
 
-        byte[] table = new byte[numSlots];
-        for (int i = 0; i < numSlots; i++) {
-            table[i] = 0;
-        }
+        byte[] table = makeByteTable(numSlots);
 
         boolean prediction = true;
         boolean actual = true;
@@ -178,14 +217,14 @@ public final class BranchSim {
             String source = null;
             String destin = null;
             String result = null;
-            long sourceLong = 0;
-            long destinLong = 0;
+            int sourceInt = 0;
+            int destinInt = 0;
             try {
                 source = lineScanner.next();
                 destin = lineScanner.next();
                 result = lineScanner.next();
-                sourceLong = Long.parseLong(source, HEX);
-                destinLong = Long.parseLong(destin, HEX);
+                sourceInt = Integer.parseInt(source, SIXTEEN);
+                destinInt = Integer.parseInt(destin, SIXTEEN);
             } catch (NumberFormatException nfe) {
                 System.err.println("Invalid input format!");
                 break;
@@ -194,7 +233,7 @@ public final class BranchSim {
                 break;
             }
 
-            int tableLocation = ((int) sourceLong) % numSlots;
+            int tableLocation = ((int) sourceInt) % numSlots;
             byte b = table[tableLocation];
             prediction = setTaken(b, numSteps);
 
@@ -215,35 +254,37 @@ public final class BranchSim {
                 break;
             }
 
-            checkCorrectness(actual, prediction);
+            evalPredication(prediction, actual);
             lineScanner.close();
         }
         size = numSlots * (int) (Math.log(numSteps) / Math.log(2));
 
     }
 
-
+    /**
+     * Dynamic two-level predictor with the given number of slots for the
+     * history table, the given number of possible history patterns, either
+     * many local or one global prediction table(s), and the given number of
+     * steps for the saturation counter.
+     *
+     * @param xzScanner Scanner for the .xz file.
+     * @param args arguments for the program.
+     */
     private static void twolevelPredictor(Scanner xzScanner, String[] args) {
         boolean slotValid = checkSlots(args[1]);
         boolean historyValid = checkHistory(args[2]);
-        boolean typeValid = checkType(args[3]);
-        boolean stepsValid = checkSteps(args[4]);
-        boolean isLocal = checkLocal(args[3]);
+        boolean typeValid = checkType(args[THREE]);
+        boolean stepsValid = checkSteps(args[FOUR]);
+        boolean isLocal = checkLocal(args[THREE]);
 
         int numSlots = Integer.parseInt(args[1]);
         int historyWidth = Integer.parseInt(args[2]);
-        String type = args[3];
-        int numSteps = Integer.parseInt(args[4]);
+        int numSteps = Integer.parseInt(args[FOUR]);
 
-        if (!slotValid || !historyValid || !typeValid || !stepsValid) {
-            System.err.println("Invalid inputs to twolevel predictor!");
-            System.exit(1);            
-        }
+        checkTwoLevelValid(slotValid, historyValid, typeValid, stepsValid);
 
-        int[] history = new int[numSlots];
-        for (int i = 0; i < numSlots; i++) {
-            history[i] = 0; // initialize with 0s
-        }
+        int[] history = makeHistoryTable(numSlots);
+
         size += numSlots * (int) (Math.log(historyWidth) / Math.log(2));
 
         HashMap<Long, Byte> map = new HashMap<>();
@@ -265,7 +306,7 @@ public final class BranchSim {
             String result = "";
             try {
                 source = lineScanner.next().trim();
-                sourceInt = Integer.parseInt(source, HEX);
+                sourceInt = Integer.parseInt(source, SIXTEEN);
                 destin = lineScanner.next().trim();
                 result = lineScanner.next().trim();
             } catch (NumberFormatException nfe) {
@@ -317,39 +358,91 @@ public final class BranchSim {
                 break;
             }
 
-            if (prediction == actual) {
-                correctPredictions++;
-            } else {
-                wrongPredictions++;
-            }
+            evalPredication(prediction, actual);
+
             lineScanner.close();
 
         }
 
     }
 
-    /**************************************/
-    /*Helper Methods*/
-    /**************************************/
+    /*********************************************************************/
+    /*************************** Helper Methods **************************/
+    /*********************************************************************/
 
-    private static void checkCorrectness(boolean actual, boolean prediction) {
-        if (actual == prediction) {
+    /**
+     * Checks if the inputs to the two-level predictor are valid.
+     * @param slotValid boolean of whether slot numbers is valid.
+     * @param historyValid boolean of whether history table width is valid.
+     * @param typeValid boolean of whether type specification is valid.
+     * @param stepsValid boolean of whether number of steps is valid.
+     */
+    private static void checkTwoLevelValid(boolean slotValid,
+                                           boolean historyValid,
+                                           boolean typeValid,
+                                           boolean stepsValid) {
+        if (!slotValid || !historyValid || !typeValid || !stepsValid) {
+            System.err.println("Invalid inputs to twolevel predictor!");
+            System.exit(1);
+        }
+    }
+
+    /**
+     * Evaluate if the prediction was correct or not.
+     * @param prediction The simulator's prediction.
+     * @param actual The actual outcome.
+     */
+    private static void evalPredication(boolean prediction, boolean actual) {
+        if (prediction == actual) {
             correctPredictions++;
         } else {
             wrongPredictions++;
         }
     }
 
-    private static boolean checkLocal(String type) {
-        if (type.equalsIgnoreCase("local")) {
-            return true;
-        } else {
-            return false;
+    /**
+     * Creates a history table given the number of slots.
+     * @param numSlots The number of slots for the table.
+     * @return the history table initialized with zeros.
+     */
+    private static int[] makeHistoryTable(int numSlots) {
+        int[] history = new int[numSlots];
+        for (int i = 0; i < numSlots; i++) {
+            history[i] = 0; // initialize with 0s
         }
+        return history;
     }
 
+    /**
+     * Creates a byte table given the number of slots.
+     * @param numSlots The number of slots for the table.
+     * @return the byte table initialized with zeros.
+     */
+    private static byte[] makeByteTable(int numSlots) {
+        byte[] table = new byte[numSlots];
+        for (int i = 0; i < numSlots; i++) {
+            table[i] = 0;
+        }
+        return table;
+    }
+
+    /**
+     * Check if the given argument is "local" or "global".
+     * @param type The type of two-level predictor we want.
+     * @return true or false.
+     */
+    private static boolean checkLocal(String type) {
+        return type.equalsIgnoreCase("local");
+    }
+
+    /**
+     * Sets the factor based on the simulator being local or global.
+     * @param isLocal whether or not the simulator is local.
+     * @param location the location to be used if local.
+     * @return local location or global 0.
+     */
     private static int setFactor(boolean isLocal, int location) {
-        return isLocal == true? location : 0;
+        return isLocal ? location : 0;
     }
 
     /**
@@ -366,35 +459,51 @@ public final class BranchSim {
         return taken;
     }
 
+    /**
+     * Checks validity of type input by user.
+     * @param type "local" or "global."
+     * @return true if either of above in any case, false else.
+     */
     private static boolean checkType(String type) {
-        if (type.equalsIgnoreCase("local")
-            || type.equalsIgnoreCase("global")) {
-            return true;
-        } else {
-            return false;
-        }
+        return type.equalsIgnoreCase("local")
+            || type.equalsIgnoreCase("global");
     }
 
+    /**
+     * Checks validity of number of slots input by user.
+     * @param arg String of number of slots.
+     * @return True if valid.
+     */
     private static boolean checkSlots(String arg) {
         int numSlots = 0;
+        //Check if numeric.
         try {
             numSlots = Integer.parseInt(arg);
         } catch (NumberFormatException e) {
             System.err.println("Historynum not a number!");
             System.exit(1);
-        }        
+        }
+
         boolean res = true;
-        if (numSlots < 4 || numSlots > 65536) {
+        //Check if between 4 and 16.
+        if (numSlots < FOUR || numSlots > TWOSIXTEEN) {
             res = false;
         }
+        //Check if power of 2.
         if (!isTwosPower(numSlots)) {
             res = false;
         }
         return res;
     }
 
+    /**
+     * Checks if the width of the history table input by user is valid.
+     * @param arg String representation of history table width.
+     * @return True if valid.
+     */
     private static boolean checkHistory(String arg) {
         int numHistory = 0;
+        //Check if numeric.
         try {
             numHistory = Integer.parseInt(arg);
         } catch (NumberFormatException e) {
@@ -402,17 +511,25 @@ public final class BranchSim {
             System.exit(1);
         }
         boolean res = true;
-        if (numHistory < 4 || numHistory > 65536) {
+        //Check range.
+        if (numHistory < FOUR || numHistory > TWOSIXTEEN) {
             res = false;
         }
+        //Check power of two.
         if (!isTwosPower(numHistory)) {
             res = false;
         }
         return res;
     }
 
+    /**
+     * Checks if the numSteps for saturation counter input by user is valid.
+     * @param arg String rep of number of steps for saturation counter.
+     * @return True if valid.
+     */
     private static boolean checkSteps(String arg) {
         int numSteps = 0;
+        //Check if numeric.
         try {
             numSteps = Integer.parseInt(arg);
         } catch (NumberFormatException e) {
@@ -420,23 +537,29 @@ public final class BranchSim {
             System.exit(1);
         }
         boolean res = true;
-        if (numSteps < 2 || numSteps > 16) {
+        //Check range.
+        if (numSteps < 2 || numSteps > SIXTEEN) {
             res = false;
         }
+        //Check power of two.
         if (!isTwosPower(numSteps)) {
             res = false;
         }
         return res;
     }
 
+    /**
+     * Checks if a number is a power of 2.
+     * @param num the number to be tested.
+     * @return true if power of 2.
+     */
     private static boolean isTwosPower(int num) {
-        if ((num & (num - 1)) == 0) {
-            return true;
-        } else {
-            return false;
-        }
+        return (num & (num - 1)) == 0;
     }
 
+    /**
+     * Prints the result of prediction simulation on stdout.
+     */
     private static void printRes() {
         double goodPerc = 0;
         double badPerc = 0;
@@ -454,8 +577,14 @@ public final class BranchSim {
         System.out.println("Size " + (long) size);
     }
 
+    /**
+     * Determines which simulator to call based on argument.
+     * @param args The array of input arguments by user.
+     * @param command The type of simulator == args[0].
+     * @param xzScanner The scanner for the .xz file.
+     */
     private static void executePredictor(String[] args, String command,
-                                         Scanner xzScanner) {        
+                                         Scanner xzScanner) {
         if (command.equals("at")) {
             alwaysTaken(xzScanner);
         } else if (command.equals("nt")) {
@@ -487,8 +616,7 @@ public final class BranchSim {
 
     /**
      * Main driver for this program.
-     *
-     * @param args arguments for this program.
+     * @param args Input arguments for this program.
      */
     public static void main(String[] args) {
         if (args.length <= 0) {
