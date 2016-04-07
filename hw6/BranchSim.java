@@ -1,6 +1,7 @@
 /*
- * 600.233 Computer Systems Fundamentals
+ * 600.233 Computer System Fundamentals
  * Name: Joon Hyuck Choi
+ * Assignment 6
  * JHED: jchoi100
  * email: jchoi100@jhu.edu
  * BranchSim.java

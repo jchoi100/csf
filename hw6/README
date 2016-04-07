@@ -1,0 +1,389 @@
+ 600.233 Computer System Fundamentals
+ Assignment 6
+ Name: Joon Hyuck Choi
+ JHED: jchoi100
+ email: jchoi100@jhu.edu
+ README
+
+===========================================================================
+
+ Problem 1
+
+ - Referring to the results shown below, we can see that the results obtained
+   from gcc-10M and gcc-50M are very similar. About 70% of branches were 
+   forward, and about 30% were backward. The average distance for both the
+   forward and backward branches were quite far--both over 600. Looking at
+   the distribution of the average distance for the branches, we can conjecture
+   that having roughly more than 600 slots when running the dynamic predictors
+   would be sufficient to cover all the local addresses.
+
+ - In the art-100M file, about 95% of the time, we see that branches move
+   backwards. Moreover, the backward branch average distance is greater than
+   the forward branch average distance. Moreover, the average distance of 
+   6.38 bytes for the forward branches indicates that most forward branches
+   only branch out very close by--maybe 1~2 bytes forward. In this case,
+   the distribution of the branch distances shows that some number a bit
+   over 50 could be sufficient to serve as the number of slots in the dynamic
+   predictors. The short forward jumps, per my conjecture, seem like simple
+   if condition checks. Or, more likely, looking at the fact that 95% of
+   the time we branched backwards, the program could contain lots of loops,
+   and the 5% accounts for the times when we finish the loop and progress
+   to the next part of the program.
+
+ - In the sjeng-100M file, se can see that about 62% of branches were
+   forward, and about 37% were backward. Moreover, The average distance for
+   each type of branch were both around 200 ~ 300. Having about 350~400 to
+   serve as the slot number in the dynamic predictors should be sufficient.
+
+	Run Results:
+	---------------------------------------------------------------------
+	<gcc-10M>
+		Total 1482017
+		Forward 1026002
+		Backward 456015
+		Forward% 69.23
+		Backward% 30.77
+		Forward-distance 636.49
+		Backward-distance 613.59
+	---------------------------------------------------------------------
+	<gcc-50M>
+		Total 7362160
+		Forward 5127816
+		Backward 2234344
+		Forward% 69.65
+		Backward% 30.35
+		Forward-distance 629.68
+		Backward-distance 620.87
+	---------------------------------------------------------------------
+	<art-100M>
+		Total 14375182
+		Forward 781678
+		Backward 13593504
+		Forward% 5.44
+		Backward% 94.56
+		Forward-distance 6.38
+		Backward-distance 50.92
+	---------------------------------------------------------------------
+	<sjeng-100M>
+		Total 13353749
+		Forward 8351217
+		Backward 5002532
+		Forward% 62.54
+		Backward% 37.46
+		Forward-distance 323.23
+		Backward-distance 249.22
+	---------------------------------------------------------------------
+
+===========================================================================
+
+ Problem 2
+
+ 	- Arrays with fixed size were used for the bimodal case and also
+ 	for the history counters in the two-level case.
+
+ 	- But for the saturation counters in the two-level case, I used
+ 	a hashmap since the history table could potentially become gigantic.
+
+===========================================================================
+
+ Problem 3
+
+ 	Final Result: (Because the explanation is long and tedious and contains
+ 				   a lot of simulation results, I will state my final result
+ 				   first, and the reader may progress to read analysis of
+ 				   each individual case below.)
+ 				   In most cases, the simple heuristic approach of "always
+ 				   take", "not take", or "backward taken, forward not taken"
+ 				   give less accurate results. So, I wouldn't say these are
+ 				   the best predictors to use.
+
+ 				   However, the bimodal approach and the two-level approach
+ 				   gave comparatively better (sometimes really good)
+ 				   predictions. In many cases, the two-level predictor with
+ 				   local type gave very good performance, and in certain
+ 				   cases, the global two-level and bimodal also gave 
+ 				   good results. So it is a bit hard to judge which one
+ 				   is the "best" of them all. It would really depend on
+ 				   what characteristics the input program has. Depending on
+ 				   the program that we use as the input, the results will
+ 				   vary. But the two-level and bimodal approach should give
+ 				   reasonable results for most programs. (And give very
+ 				   accurate results if they are given the "right" programs.)
+
+ 				   The downside of the local two-level approach is that
+ 				   it may potentially take up too much memory.
+
+
+ 	Based on the discussion in Problem 1, we conjectrue that gcc-10M and
+ 	gcc-50M are similar (they seem like smaller versions of the same 
+ 	larger file in different scale factors), art-100M contains lots of
+ 	loops, and sjeng is some random program with various branches.
+
+	Simulation results:
+	---------------------------------------------------------------------
+	TWO-LEVEL (LOCAL)
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-10M.branch.xz | 
+					java BranchSim twolevel 1024 256 local 4
+		Total 1482017
+		Good 1298459
+		Bad 183558
+		Good% 87.61
+		Bad% 12.39
+		Size 126804
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-50M.branch.xz | 
+					java BranchSim twolevel 1024 256 local 4
+		Total 7362160
+		Good 6560400
+		Bad 801760
+		Good% 89.11
+		Bad% 10.89
+		Size 165870
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat art-100M.branch.xz | 
+					java BranchSim twolevel 1024 256 local 4
+		Total 14375182
+		Good 14303211
+		Bad 71971
+		Good% 99.50
+		Bad% 0.50
+		Size 10032
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat sjeng-100M.branch.xz | 
+					java BranchSim twolevel 1024 256 local 4
+		Total 13353749
+		Good 12348610
+		Bad 1005139
+		Good% 92.47
+		Bad% 7.53
+		Size 105224
+
+	==> We can see that the larger datasets have better results.
+	---------------------------------------------------------------------
+
+	TWO-LEVEL (GLOBAL)
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-10M.branch.xz | 
+					java BranchSim twolevel 1024 256 global 4
+		Total 1482017
+		Good 1244685
+		Bad 237332
+		Good% 83.99
+		Bad% 16.01
+		Size 8704
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-50M.branch.xz | 
+					java BranchSim twolevel 1024 256 global 4
+		Total 7362160
+		Good 6176499
+		Bad 1185661
+		Good% 83.90
+		Bad% 16.10
+		Size 8704
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat art-100M.branch.xz | 
+					java BranchSim twolevel 1024 256 global 4
+		Total 14375182
+		Good 13602043
+		Bad 773139
+		Good% 94.62
+		Bad% 5.38
+		Size 8690
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat sjeng-100M.branch.xz | 
+					java BranchSim twolevel 1024 256 global 4
+		Total 13353749
+		Good 11445312
+		Bad 1908437
+		Good% 85.71
+		Bad% 14.29
+		Size 8704
+
+	==> We can see that art-100M has good performance. We conjectured that
+		art-100M has lots of loops. It might show good performance in this
+		case because loops more or less behave similarly. So even though
+		this implementation has only one global table that every history
+		pattern shares, it might not have done so bad. But in other files,
+		the branches seem to be more various, so the performance is less
+		accurate.
+	---------------------------------------------------------------------
+
+	BIMODAL
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-10M.branch.xz | 
+					java BranchSim bimodal 256 4
+		Total 1482017
+		Good 1118781
+		Bad 363236
+		Good% 75.49
+		Bad% 24.51
+		Size 512
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-50M.branch.xz | 
+					java BranchSim bimodal 256 4
+		Total 7362160
+		Good 5564786
+		Bad 1797374
+		Good% 75.59
+		Bad% 24.41
+		Size 512
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat art-100M.branch.xz | 
+					java BranchSim bimodal 256 4
+		Total 14375182
+		Good 13535609
+		Bad 839573
+		Good% 94.16
+		Bad% 5.84
+		Size 512
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat sjeng-100M.branch.xz | 
+					java BranchSim bimodal 256 4
+		Total 13353749
+		Good 10759840
+		Bad 2593909
+		Good% 80.58
+		Bad% 19.42
+		Size 512
+
+	==> Again, we see that art-100M has good performance. Moreover, we can
+		see that the smaller files have less accurate results. This may
+		indicate that the bimodal method works better with more data.
+	---------------------------------------------------------------------
+
+	ALWAYS TAKE
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-10M.branch.xz | 
+					java BranchSim at
+		Total 1482017
+		Good 671404
+		Bad 810613
+		Good% 45.30
+		Bad% 54.70
+		Size 0
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-50M.branch.xz | 
+					java BranchSim at
+		Total 7362160
+		Good 3337810
+		Bad 4024350
+		Good% 45.34
+		Bad% 54.66
+		Size 0
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat art-100M.branch.xz | 
+					java BranchSim at
+		Total 14375182
+		Good 10362471
+		Bad 4012711
+		Good% 72.09
+		Bad% 27.91
+		Size 0
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat sjeng-100M.branch.xz | 
+					java BranchSim at
+		Total 13353749
+		Good 7500570
+		Bad 5853179
+		Good% 56.17
+		Bad% 43.83
+		Size 0
+
+	==> A very simple heuristic--to always take--did not show such great
+		results. We can see that the art-100M case is not as bad as the
+		other ones probably because it contains many loops. So most of the
+		time, it was correct in assuming that the loop branch will be taken.
+	---------------------------------------------------------------------
+
+	NOT TAKE
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-10M.branch.xz | 
+					java BranchSim nt
+		Total 1482017
+		Good 810613
+		Bad 671404
+		Good% 54.70
+		Bad% 45.30
+		Size 0
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-50M.branch.xz | 
+					java BranchSim nt
+		Total 7362160
+		Good 4024350
+		Bad 3337810
+		Good% 54.66
+		Bad% 45.34
+		Size 0
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat art-100M.branch.xz | 
+					java BranchSim nt
+		Total 14375182
+		Good 4012711
+		Bad 10362471
+		Good% 27.91
+		Bad% 72.09
+		Size 0
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat sjeng-100M.branch.xz | 
+					java BranchSim nt
+		Total 13353749
+		Good 5853179
+		Bad 7500570
+		Good% 43.83
+		Bad% 56.17
+		Size 0
+
+	==>	For similar reasons as the "Always Take", this simple heurstic
+		approach is not so accurate. In this case, the art-100M file did
+		especially horribly because of the opposite reason of why it 
+		worked so well in the "Always Take" appproach.
+	---------------------------------------------------------------------
+
+	BACKWARDS TAKE, FORWARDS NOT TAKE
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-10M.branch.xz | 
+					java BranchSim btfn
+		Total 1482017
+		Good 856506
+		Bad 625511
+		Good% 57.79
+		Bad% 42.21
+		Size 0
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat gcc-50M.branch.xz | 
+					java BranchSim btfn
+		Total 7362160
+		Good 4283096
+		Bad 3079064
+		Good% 58.18
+		Bad% 41.82
+		Size 0
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat art-100M.branch.xz | 
+					java BranchSim btfn
+		Total 14375182
+		Good 10109875
+		Bad 4265307
+		Good% 70.33
+		Bad% 29.67
+		Size 0
+
+	james@cirl-clea:~/Desktop/csf/hw/csf/hw6$ xzcat sjeng-100M.branch.xz | 
+					java BranchSim btfn
+		Total 13353749
+		Good 7006577
+		Bad 6347172
+		Good% 52.47
+		Bad% 47.53
+		Size 0
+
+	==> This heuristic was less simplistic than the AT or NT. So this
+		shows slightly better performance, although it is not so great either.
+		Again, art-100M did comparatively better since it filters if branches
+		and loop branches. In the case of an if condition check, it goes
+		forward. In the case of a loop, it goes backward.
+	---------------------------------------------------------------------
+	
+===========================================================================
+<EOF>

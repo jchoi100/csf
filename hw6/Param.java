@@ -1,6 +1,7 @@
 /*
- * 600.233 Computer Systems Fundamentals
+ * 600.233 Computer System Fundamentals
  * Name: Joon Hyuck Choi
+ * Assignment 6
  * JHED: jchoi100
  * email: jchoi100@jhu.edu
  * Param.java
@@ -16,13 +17,23 @@ import java.util.Scanner;
  */
 public final class Param {
 
+    /** Used to calculate percentage. */
     private static final double PERCENTAGE = 100.0;
+
+    /** Sixteen. */
     private static final int HEX = 16;
 
+    /**
+     * Dummy constructor.
+     */
     private Param() {
 
     }
 
+    /**
+     * Processes the input file and produces statistics.
+     * @param xzScanner The scanner for the .xz file.
+     */
     private static void parseInfo(Scanner xzScanner) {
 
         double numLines = 0;
@@ -69,6 +80,9 @@ public final class Param {
         printRes(numLines, numForward, numBackward, forwardDist, backwardDist);
     }
 
+    /**
+     * Prints the result of running the program.
+     */
     private static void printRes(double numLines, long numForward,
                                      long numBackward, long forwardDist,
                                      long backwardDist) {
