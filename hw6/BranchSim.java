@@ -579,6 +579,18 @@ public final class BranchSim {
     }
 
     /**
+     * Checks if the given args has the correct length.
+     * @param args The arguments for this program.
+     * @param len The correct length.
+     */
+    private static void checkValidArgLen(String[] args, int len) {
+        if (args.length != len) {
+            System.err.println("Wrong number of arguments!");
+            System.exit(1);
+        }
+    }
+
+    /**
      * Determines which simulator to call based on argument.
      * @param args The array of input arguments by user.
      * @param command The type of simulator == args[0].
@@ -587,40 +599,20 @@ public final class BranchSim {
     private static void executePredictor(String[] args, String command,
                                          Scanner xzScanner) {
         if (command.equalsIgnoreCase("at")) {
-            if (args.length == 1) {
-                alwaysTaken(xzScanner);
-            } else {
-                System.err.println("Wrong number of arguments!");
-                System.exit(1);                
-            }
+            checkValidArgLen(args, 1);
+            alwaysTaken(xzScanner);
         } else if (command.equalsIgnoreCase("nt")) {
-            if (args.length == 1) {
-                neverTaken(xzScanner);
-            } else {
-                System.err.println("Wrong number of arguments!");
-                System.exit(1);                
-            }
+            checkValidArgLen(args, 1);
+            neverTaken(xzScanner);
         } else if (command.equalsIgnoreCase("btfn")) {
-            if (args.length == 1) {
-                btfnPredictor(xzScanner);
-            } else {
-                System.err.println("Wrong number of arguments!");
-                System.exit(1);                
-            }
+            checkValidArgLen(args, 1);
+            btfnPredictor(xzScanner);
         } else if (command.equalsIgnoreCase("bimodal")) {
-            if (args.length == THREE) {
-                bimodalPredictor(xzScanner, args);
-            } else {
-                System.err.println("Wrong number of arguments!");
-                System.exit(1);
-            }
+            checkValidArgLen(args, THREE);
+            bimodalPredictor(xzScanner, args);
         } else if (command.equalsIgnoreCase("twolevel")) {
-            if (args.length == FIVE) {
-                twolevelPredictor(xzScanner, args);
-            } else {
-                System.err.println("Wrong number of arguments!");
-                System.exit(1);
-            }
+            checkValidArgLen(args, FIVE);
+            twolevelPredictor(xzScanner, args);
         } else {
             System.err.println("Wrong predictor type!");
             System.exit(1);
