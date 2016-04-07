@@ -1,0 +1,71 @@
+600.233 Computer Systems Fundamentals
+Name: Joo Chang Lee
+JHED ID: jlee381
+Email: jlee381@jhu.edu
+Assignment 4. MIPS and SPIM!
+README
+
+1. Long Arithmetic
+
+There is no carry bit in MIPS.
+So, we went around by this procedure.
+First, we add the lower 32 bits and store the result to $v0.
+Then, we check whether the resulting 32 bit is larger than one of the initial 32 bits.
+Because, if there was a carry, the result will be smaller than both of the initial 32 bits.
+(if x < 10 and y < 10, x + y < x + 10 and x + y < y + 10)
+So, we use sltu to set $v1 to 1 if the result of lower bits is smaller, indicating carry.
+Then we add the two higher bits to $v1.
+
+Similar logic goes for the subtracting.
+First, we subtract the lower 32 bits and store the result to $v0.
+Then, if the first lower 32 bit is smaller than the second 32 bit, the borrow will occur.
+So, we set the "borrow flag" to $v1.
+And first, we add the subtraction of first higher 32bit and the "borrow bit", and store the result to $v1.
+If there was no borrow, it will be 'first - 0', otherwise 'first - 1'.
+Then we subtract the second higher 32 bit from that and store the result to $v1.
+
+
+2. Unhexing Numbers
+
+I used java.
+
+instruction:
+javac Unhex.java
+java Unhex
+
+prepare a string with the digits: 0123456789abcdef
+then, for 8 times, calculate mod 16, find out the index of result, add the character to hex string,
+and shift 4 bits from the integer.
+
+
+3. Bubbly Sorts
+
+Store $a0 (size of array) in 2 different locations, one for inner loop and one for the outer loop.
+load value from the address pointer.
+Then increment the address pointer by 4, and load next value from the next address.
+compare the two values, and if the former is greater, jump to swap subroutine.
+In the swap subroutine, store two consecutive integers in temp registers,
+and store the temp registers back to memory, in reverse order.
+Then return to the inner loop, before the end-of-inner-loop condition check.
+When inner loop is done (counter is 0), return to outer loop, decrement outer loop counter by 1,
+reset the inner loop counter and enter the inner loop again.
+When the outer loop is done (counter is 0), store the registers back and exit the subroutine.
+
+
+4. How many bits in a word?
+
+First, read input from command line.
+4($a1) contains 32-bit long pointer to the memory containing the argument.
+store that to a register.
+Then prepare a counter for output.
+For the outer loop, read input, byte by byte, from the memory, increasing the pointer by 1 byte each time.
+Then, check if the input character (8 bit) is a valid input.
+There are 3 ranges: number 0-9, upper case A-F, and lower case a-f.
+Check for each condition by blt with six constants,
+and if the character is in range, count it. Otherwise throw the character away and return to read next input.
+If the character is in range, subtract the character by the factor that would convert it to a hexadecimal equivalent.
+(ex: 48 for number, 55 for upper case, so that A = 10, and so on)
+Then, do a division by 2, and add remainder (either 0 or 1) to the counter.
+Read the quotient, and continue dividing until quotient is 0.
+Then proceed to read the next character.
+When a zero byte is reached (end of string), print out the counter in integer value.

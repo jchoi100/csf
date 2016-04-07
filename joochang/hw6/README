@@ -1,0 +1,249 @@
+600.233 Computer Systems Fundamentals
+Name: Joo Chang Lee
+JHED ID: jlee381
+Email: jlee381@jhu.edu
+Assignment 6. Branching Here and There
+README
+
+
+1. Branch Traces
+gcc-10M and gcc-50M had similar properties.
+They had around 7:3 ration on forward / backward percentage.
+The distances were quite far away (offset size a little over 600).
+And there was little difference between
+average forward moving distance and average backward moving distance,
+although forward moves were a little further away.
+
+Branches in art-100M moved backwards a lot, around 95% of the time.
+forward movements were close, averaging 6.38 bytes offset (1 or 2 instructions)
+the backward movements were also small,
+but moved much further than forward movements, around 50 bytes.
+I think these may indicate some loops.
+
+sjeng-100M had similar results as gccs but a little different.
+The forward percentage was 62.54%, lower than that of gccs.
+The forward / backward offsets were
+around 320 for forward movements
+and around 250 for backward movements.
+The forward movements were a little further away
+than those of backward movements.
+
+2.
+
+Used fixed arrays for bimodal and the history counters in twolevel,
+assuming slots << size of input file, so that the size of slots would be minimal.
+But used dynamic memory allocation for saturation counters in twolevel,
+since slots * historypatterns could get large enough (up to 2^32)
+
+
+3.
+
+Summary : bimodal or global twolevel. I prefer bimodal.
+Local is definitely an option when there is a clear pattern in the program.
+Saturation counter does not have to be so large.
+
+
+In general, using the command line argument examples from the assignment page,
+dynamic predictors had higher prediction rate, with the success rate being:
+static < bimodal < twolevel global < twolevel local
+and also the size increasing in a similar fashion.
+
+gcc-10M
+at
+Total 1482017
+Good 671404
+Bad 810613
+Good% 45.30
+Bad% 54.70
+Size 0
+
+nt
+Total 1482017
+Good 810613
+Bad 671404
+Good% 54.70
+Bad% 45.30
+Size 0
+
+btfn
+Total 1482017
+Good 856506
+Bad 625511
+Good% 57.79
+Bad% 42.21
+Size 0
+
+bimodal 256 4
+Total 1482017
+Good 1118781
+Bad 363236
+Good% 75.49
+Bad% 24.51
+Size 512
+
+twolevel 1024 256 global 4
+Total 1482017
+Good 1244685
+Bad 237332
+Good% 83.99
+Bad% 16.01
+Size 8704
+
+twolevel 1024 256 local 4
+Total 1482017
+Good 1298459
+Bad 183558
+Good% 87.61
+Bad% 12.39
+Size 126804
+
+For the twolevel predictors.
+usually, local twolevel predictors were better than global twolevel and bimodal,
+but the size of local predictors were a lot larger than global predictor.
+Also, the operation for local predictors can take long, especially the search for the value.
+But, given similar amount of memory allocation, local proves better.
+So I would recommend using local if
+1) you have a lot of time or 
+2) the size of parameters are small enough to compensate for the large size.
+
+sjeng-100M
+twolevel 1024 256 local 4
+Total 13353749
+Good 12348610
+Bad 1005139
+Good% 92.47
+Bad% 7.53
+Size 105224
+
+twolevel 1024 256 global 4
+Total 13353749
+Good 11445312
+Bad 1908437
+Good% 85.71
+Bad% 14.29
+Size 8704
+
+twolevel 16384 256 global 4
+Total 13353749
+Good 11655153
+Bad 1698596
+Good% 87.28
+Bad% 12.72
+Size 131584
+
+
+But, when there is a clear pattern in the program,
+the size of local predictor may not be as large,
+when using dynamic allocation, with high success rate.
+Maybe it is because I use fixed arrays for history storage,
+but in cases like this local predictors can be an option.
+
+art-100M
+twolevel 1024 256 local 4
+Total 14375182
+Good 14303211
+Bad 71971
+Good% 99.50
+Bad% 0.50
+Size 10032
+
+twolevel 4096 256 global 4
+Total 14375182
+Good 13602043
+Bad 773139
+Good% 94.62
+Bad% 5.38
+Size 33266
+
+for the bimodal, it needed certain amount of size in order to actually work.
+Assigning minimal memory to predictors were as worse off as static predictors.
+Here the prediction rate gets better and better as the size grows
+but the prediction rate growth becomes slower.
+
+Used gcc-50M for testing
+bimodal 4 2
+Total 7362160
+Good 4489539
+Bad 2872621
+Good% 60.98
+Bad% 39.02
+Size 4
+
+bimodal 256 4
+Total 7362160
+Good 5564786
+Bad 1797374
+Good% 75.59
+Bad% 24.41
+Size 512
+
+bimodal 4096 8
+Total 7362160
+Good 6523133
+Bad 839027
+Good% 88.60
+Bad% 11.40
+Size 12288
+
+bimodal 65536 16
+Total 7362160
+Good 6683690
+Bad 678470
+Good% 90.78
+Bad% 9.22
+Size 262144
+
+
+Sadly, global twolevel and bimodal have pretty much the same results
+given similar memory allocations.
+I, however, would go for bimodal,
+since the algorithm for twolevel predictors are much more complex,
+including having to look at both the history counter and the saturation counter.
+
+sjeng-100M
+twolevel 1024 256 global 4
+Total 13353749
+Good 11445312
+Bad 1908437
+Good% 85.71
+Bad% 14.29
+Size 8704
+
+bimodal 4096 8
+Total 13353749
+Good 11411421
+Bad 1942328
+Good% 85.45
+Bad% 14.55
+Size 12288
+
+
+Also, having a large saturation counter does not always help.
+Because, when you have all saturation counters to 0,
+you need to take more bad predictions (not taken)
+in order to first take the branch.
+
+sjeng-100M
+twolevel 1024 256 local 4
+Total 13353749
+Good 12348610
+Bad 1005139
+Good% 92.47
+Bad% 7.53
+Size 105224
+
+twolevel 1024 256 local 16
+Total 13353749
+Good 12264736
+Bad 1089013
+Good% 91.84
+Bad% 8.16
+Size 202256
+
+twolevel 65536 65536 local 16
+Total 13353749
+Good 12102397
+Bad 1251352
+Good% 90.63
+Bad% 9.37
+Size 3182608

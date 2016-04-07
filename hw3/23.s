@@ -1,0 +1,5 @@
+start: LDA 5
+ADD 3243
+LDA 3
+LDI 7
+LDI 2

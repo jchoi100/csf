@@ -1,0 +1,37 @@
+600.233 Computer Systems Fundamentals
+Name: Joo Chang Lee
+JHED ID: jlee381
+Email: jlee381@jhu.edu
+Assignment 4. Eight Bits of Madness!
+README
+
+1. thirtytwo.s
+
+Just an extension of 4 8-bit addition and subtraction,
+with clearing carry for addition and setting carry for subtraction.
+
+2. plot.s
+
+I used bitshift for modular arithmetic.
+We know that the representation address is (y*32)+x + 200.
+So, the high byte will store y / 8 (integer division) + 2
+and the lower byte will store (y % 8) * 32 + x.
+The address will be called by indirect addressing.
+
+I have the adjustment value 1 for plotting high value.
+
+3. sorting.s
+
+I used 8-bit bubble sort.
+There is the inner loop and the outer loop.
+The outer loop is executed 31 times, so that all 32 elements will be sorted.
+(31 loops are needed to sort 32 elements)
+The counter for outer loop (initialized to 31) is pushed in and pulled from stack,
+decremented by 1 every time an inner loop is fully executed.
+The inner loop has counter at x initialized to 31, and this is used as index for
+the elements to compare.
+we start by loading $(20+x), and decrement x by 1, and loading $(20+x).
+which will start by comparing $3f and $3e. If $3f is equal or larger, the carry will be set.
+But if not, the carry will be clear, and we swap the elements.
+We load the two elements in $10 and $11, and swap.
+This inner loop happens until it reaches the bottom, where x = 0.

@@ -1,0 +1,56 @@
+600.233 CSF Assignment 5
+Name: Joon Hyuck Choi
+JHED: jchoi100
+email: jchoi100@jhu.edu
+README
+
+Problem 1 Long Arithmetic
+
+- Carry/borrow:
+  Sadly, MIPS does not have any flags we can use
+  to determine whether an addition or subtraction
+  resulted in an overflow or underflow.
+  In order to determine them, I did the following:
+
+  add64:
+    - when I add the two lower bytes, I checked
+      if the result of the addition was smaller than
+      one of the two original operands. If it is,
+      this means that the addition resulted in an
+      overflow and a carry should have been set.
+      I used the MIPS command stlu to do this.
+      -->   sltu $t1, $t0, $a2 
+            # check if $t0 < $a2 If so, save carry in $t1
+      Then when adding the two higher bytes, I first
+      add this carry (1 or 0) to one of the high bytes 
+      and perform rest of the addition.
+
+  sub64:
+    - after I subtract the two lower bytes ($a0 - $a2),
+      I check if $a2 > $a0. Then this should result in
+      a borrow. So I set a borrow in $t1. 
+      --> sltu $t1, $a0, $a2 
+            # check if $a0 < $a2. if so, $t1 will get 1
+      Then when subtracting the two higher bytes, I first
+      subtract this borrow (1 or 0) to one of the high
+      bytes and perform rest of the subtraction.
+
+Problem 2 Selection Sort
+    - Cannot sort negative numbers.
+      - negative numbers used to mark end of input.
+    - Please read comments in selection.s
+    - Logic and pseudocode written as comments.
+
+Problem 3 Fibonacci: Iterative and Recursive
+    - Only takes input n >= 0
+      - will return -1 if entered a negative number.
+    - Please read comments in iter_fib.s and recu_fib.s.
+    - Comments written like java code
+
+Problem 4 Integer Square Root
+    - Should give input n >= 0
+      - will consider the negative number to be some
+        huge positive number in the unsigned sense.
+    - Please read comments in isqrt.s.
+    - Comments written like java code
+<End of file>
