@@ -7,6 +7,7 @@
  */
 
 import java.util.Scanner;
+import java.util.HashMap;
 import java.util.NoSuchElementException;
 
 /**
@@ -69,7 +70,6 @@ public final class BranchSim {
             lineScanner.close();
         }
 
-        printRes();
     }
 
     private static void neverTaken(Scanner xzScanner) {
@@ -107,7 +107,6 @@ public final class BranchSim {
             lineScanner.close();
         }
 
-        printRes();
     }
 
     private static void btfnPredictor(Scanner xzScanner) {
@@ -152,7 +151,6 @@ public final class BranchSim {
             lineScanner.close();
         }
 
-        printRes();
     }
 
     private static void bimodalPredictor(Scanner xzScanner, String[] args) {
@@ -190,10 +188,10 @@ public final class BranchSim {
                 destinLong = Long.parseLong(destin, HEX);
             } catch (NumberFormatException nfe) {
                 System.err.println("Invalid input format!");
-                System.exit(1);
+                break;
             } catch (NoSuchElementException nee) {
                 System.err.println("Wrong number of inputs in a line!");
-                System.exit(1);
+                break;
             }
 
             int tableLocation = ((int) sourceLong) % numSlots;
@@ -214,15 +212,13 @@ public final class BranchSim {
                 }
             } else {
                 System.err.println("Wrong result format!");
-                System.exit(1);
+                break;
             }
 
             checkCorrectness(actual, prediction);
             lineScanner.close();
         }
         size = numSlots * (int) (Math.log(numSteps) / Math.log(2));
-
-        printRes();
 
     }
 
@@ -232,6 +228,7 @@ public final class BranchSim {
         boolean historyValid = checkHistory(args[2]);
         boolean typeValid = checkType(args[3]);
         boolean stepsValid = checkSteps(args[4]);
+        boolean isLocal = checkLocal(args[3]);
 
         int numSlots = Integer.parseInt(args[1]);
         int historyWidth = Integer.parseInt(args[2]);
@@ -243,13 +240,91 @@ public final class BranchSim {
             System.exit(1);            
         }
 
+        int[] history = new int[numSlots];
+        for (int i = 0; i < numSlots; i++) {
+            history[i] = 0; // initialize with 0s
+        }
+        size += numSlots * (int) (Math.log(historyWidth) / Math.log(2));
 
+        HashMap<Long, Byte> map = new HashMap<>();
+        String oneLine = "";
+        int factor = 0;
+        boolean prediction = true;
+        boolean actual = true;
 
+        while (xzScanner.hasNextLine()) {
+            oneLine = xzScanner.nextLine();
+            if (oneLine.trim().equals("")) {
+                break;
+            }
+            Scanner lineScanner = new Scanner(oneLine);
+            String source = "";
+            int sourceInt = 0;
+            String destin = "";
+            int destinInt = 0;
+            String result = "";
+            try {
+                source = lineScanner.next().trim();
+                sourceInt = Integer.parseInt(source, HEX);
+                destin = lineScanner.next().trim();
+                result = lineScanner.next().trim();
+            } catch (NumberFormatException nfe) {
+                System.err.println("Invalid input format!");
+                break;
+            } catch (NoSuchElementException nse) {
+                System.err.println("Wrong number of inputs in a line!");
+                break;
+            }
 
+            int location = sourceInt % numSlots;
+            int lookupVal = history[location];
 
+            factor = setFactor(isLocal, location);
 
+            long key = factor * historyWidth + lookupVal;
+            byte b = 0;
+            if (map.containsKey(key)) {
+                b = map.get(key);
+            } else {
+                map.put(key, (byte) 0);
+                size += (Math.log(numSteps) / Math.log(2));
+                b = 0;
+            }
 
-        printRes();
+            prediction = setTaken(b, numSteps);
+
+            numLines++;
+
+            if (result.equalsIgnoreCase("T")) {
+                actual = true;
+                if (b < (numSteps - 1)) {
+                    b++;
+                }
+                map.put(key, b);
+                lookupVal <<= 1;
+                lookupVal++;
+                history[location] = lookupVal % historyWidth;
+            } else if (result.equalsIgnoreCase("N")) {
+                actual = false;
+                if (b > 0) {
+                    b--;
+                }
+                map.put(key, b);
+                lookupVal <<= 1;
+                history[location] = lookupVal % historyWidth;
+            } else {
+                System.err.println("Invalid result type! Either T or N!");
+                break;
+            }
+
+            if (prediction == actual) {
+                correctPredictions++;
+            } else {
+                wrongPredictions++;
+            }
+            lineScanner.close();
+
+        }
 
     }
 
@@ -263,6 +338,18 @@ public final class BranchSim {
         } else {
             wrongPredictions++;
         }
+    }
+
+    private static boolean checkLocal(String type) {
+        if (type.equalsIgnoreCase("local")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static int setFactor(boolean isLocal, int location) {
+        return isLocal == true? location : 0;
     }
 
     /**
@@ -333,7 +420,7 @@ public final class BranchSim {
             System.exit(1);
         }
         boolean res = true;
-        if (numSteps < 4 || numSteps > 16) {
+        if (numSteps < 2 || numSteps > 16) {
             res = false;
         }
         if (!isTwosPower(numSteps)) {
@@ -393,6 +480,8 @@ public final class BranchSim {
             System.err.println("Wrong arguments!");
             System.exit(1);
         }
+
+        printRes();
 
     }
 
