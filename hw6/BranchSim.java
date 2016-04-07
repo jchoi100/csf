@@ -90,7 +90,7 @@ public final class BranchSim {
             } else if (result.equalsIgnoreCase("N")) {
                 wrongPredictions++;
             } else {
-                System.err.println("Wrong result format!");
+                System.err.println("Wrong result format! Either T or N!");
                 System.exit(1);
             }
 
@@ -133,7 +133,7 @@ public final class BranchSim {
             } else if (result.equalsIgnoreCase("T")) {
                 wrongPredictions++;
             } else {
-                System.err.println("Wrong result format!");
+                System.err.println("Wrong result format! Either T or N!");
                 System.exit(1);
             }
 
@@ -251,7 +251,7 @@ public final class BranchSim {
                     table[tableLocation]--;
                 }
             } else {
-                System.err.println("Wrong result format!");
+                System.err.println("Wrong result format! Either T or N!");
                 break;
             }
 
@@ -481,7 +481,7 @@ public final class BranchSim {
         try {
             numSlots = Integer.parseInt(arg);
         } catch (NumberFormatException e) {
-            System.err.println("Historynum not a number!");
+            System.err.println("Slots not a number!");
             System.exit(1);
         }
 
@@ -586,28 +586,43 @@ public final class BranchSim {
      */
     private static void executePredictor(String[] args, String command,
                                          Scanner xzScanner) {
-        if (command.equals("at")) {
-            alwaysTaken(xzScanner);
-        } else if (command.equals("nt")) {
-            neverTaken(xzScanner);
-        } else if (command.equals("btfn")) {
-            btfnPredictor(xzScanner);
-        } else if (command.equals("bimodal")) {
+        if (command.equalsIgnoreCase("at")) {
+            if (args.length == 1) {
+                alwaysTaken(xzScanner);
+            } else {
+                System.err.println("Wrong number of arguments!");
+                System.exit(1);                
+            }
+        } else if (command.equalsIgnoreCase("nt")) {
+            if (args.length == 1) {
+                neverTaken(xzScanner);
+            } else {
+                System.err.println("Wrong number of arguments!");
+                System.exit(1);                
+            }
+        } else if (command.equalsIgnoreCase("btfn")) {
+            if (args.length == 1) {
+                btfnPredictor(xzScanner);
+            } else {
+                System.err.println("Wrong number of arguments!");
+                System.exit(1);                
+            }
+        } else if (command.equalsIgnoreCase("bimodal")) {
             if (args.length == THREE) {
                 bimodalPredictor(xzScanner, args);
             } else {
-                System.err.println("Wrong arguments!");
+                System.err.println("Wrong number of arguments!");
                 System.exit(1);
             }
-        } else if (command.equals("twolevel")) {
+        } else if (command.equalsIgnoreCase("twolevel")) {
             if (args.length == FIVE) {
                 twolevelPredictor(xzScanner, args);
             } else {
-                System.err.println("Wrong arguments!");
+                System.err.println("Wrong number of arguments!");
                 System.exit(1);
             }
         } else {
-            System.err.println("Wrong arguments!");
+            System.err.println("Wrong predictor type!");
             System.exit(1);
         }
 
@@ -621,7 +636,7 @@ public final class BranchSim {
      */
     public static void main(String[] args) {
         if (args.length <= 0) {
-            System.err.println("Wrong arguments!");
+            System.err.println("You should specify at least one argument!");
             System.exit(1);
         }
 
