@@ -1,0 +1,110 @@
+600.233 Computer Systems Fundamentals
+Name: Ju Young Ahn, Joo Chang Lee
+JHED ID: jahn29, jlee381
+Email: jahn29@jhu.edu / jlee381@jhu.edu
+Assignment 3. Attack of the Mutant SCRAM!
+
+Problem 1. Fix the SCRAM
+
+1. A corrected block diagram of the SCRAM is attached in the pdf file. 
+
+2. Corrected micro programs for the FETCH cycle as well as for all SCRAM instructions
+except the HLT instruction. 
+
+Fetch cycle.
+t0 | MAR <- PC               | x10 = 00, x4 = 1
+t1 | MBR <- M, PC <- PC + 1  | x5 = 1, x7 = 0, x2 = 1, x13 = 1
+t2 | IR <- MBR               | x1 = 1
+
+LDA 0001
+q1t3 | MAR <- IR(lower)      | x10 = 01, x4 = 1
+q1t4 | MBR <- M              | x5 = 1, x7 = 0, x2 = 1
+q1t5 | AC <- MBR             | x11 = 0, x12 = 1
+q1t6 | reset timer           | x6 = 1
+
+LDI 0010
+q2t3 | MAR <- IR(lower)      | x10 = 01, x4 = 1
+q2t4 | MBR <- M              | x5 = 1, x7 = 0, x2 = 1
+q2t5 | MAR <- MBR            | x10 = 10, x4 = 1
+q2t6 | MBR <- M              | x5 = 1, x7 = 0, x2 = 1
+q2t7 | AC <- MBR             | x11 = 0, x12 = 1
+q2t8 | reset timer           | x6 = 1
+
+STA 0011
+q3t3 | MBR <- AC, MAR <- IR(lower) | x7 = 1, x2 = 1, x10 = 01, x4 = 1
+q3t4 | M <- MBR                    | x5 = 0
+q3t5 | reset timer                 | x6 = 1
+
+STI 0100
+q4t3 | MAR <- IR(lower) | x10 = 01, x4 - 1
+q4t4 | MBR <- M         | x5 = 1, x7 = 0, x2 = 1
+q4t5 | MAR <- MBR       | x10 = 10
+q4t6 | MBR <- AC        | x7 = 1, x2 = 1
+q4t7 | M <- MBR         | x5 = 0
+q4t8 | reset timer      | x6 = 1
+
+ADD 0101
+q5t3 | MAR <- IR(lower) | x10 = 01, x4 - 1
+q5t4 | MBR <- M         | x5 = 1, x7 = 0, x2 = 1
+q5t5 | AD <- MBR        | x9 = 1
+q5t6 | RS <- ALU        | x8 = 0, x15 = 1
+q5t7 | AC <- RS         | x11 = 1, x12 = 1
+q5t8 | reset timer      | x6 = 1
+
+SUB 0110
+q6t3 | MAR <- IR(lower) | x10 = 01, x4 - 1
+q6t4 | MBR <- M         | x5 = 1, x7 = 0, x2 = 1
+q6t5 | AD <- MBR        | x9 = 1
+q6t6 | RS <- ALU        | x8 = 1, x15 = 1
+q6t7 | AC <- RS         | x11 = 1, x12 = 1
+q6t8 | reset timer      | x6 = 1
+
+JMP 0111
+q7t3 | PC <- IR(lower)  | x3 = 1, x14 = 0
+q7t4 | reset timer      | x6 = 1
+
+JMZ 1000
+q8t3 | PC <- IR(lower)  | x3 = 1, x14 = 1
+q8t4 | reset timer      | X6 = 1
+
+3. A narrative describing in detail the bugs you found, how you fixed them, 
+and why your fix is the smallest possible correction within the parameters you were given.
+
+We found a bug that the initial SCRAM could not conduct JMZ instruction because there was no
+way of sending information about the AC into PC. So we created a new control line x14 that is 1
+for JMZ and 0 for otherwise. First, we send the 8-bit information of AC to PC. As the information 
+is sent, it goes through an OR gate that connects all 8 bits and produces 1 bit output. If AC is 
+(contains) 0, the result of the OR gate will be 0; otherwise, it will be 1. Then, we sent this signal 
+and x14 through the NAND gate. If x14 is 0, which means not JMZ, the result of the NAND gate will 
+always be 1, regardless of the signals from the AC. If x14 is 1, the signal from the AC needs to be 0 
+in order for the result to be 1. And, we send this resulting signal and x3, the load for PC, through 
+an AND gate so that PC will receive input from IR when load(x3) is high(1) and the result of the 
+NAND gate is also 1. 
+
+Default for x5 is 1 for read and 0 for write. 
+Whenever we don't say that R/W (x5) is 0, we assumed it to be 1. 
+
+We add x8 because ALU needs some kind of selection signal to determine which operation to 
+perform (add or subtract). Default is 0 for addtion and 1 for subtraction. 
+
+When MBR sends a signal to MAR through a MUX, the lower 4-bits are wired to input 2 of the MUX
+and the upper 4-bits are wired to input 3 of the MUX. 
+
+Any arrow without number of bits is a one bit line. 
+
+We believe that these are the smallest possible corrections within the parameters we were given 
+because we added three gates for the JMZ instruction and manipulated two control lines, x8 and x14. 
+However, with these changes, we were able to produce corrected micro-programs for the fetch cycle and 
+all instructions except HLT. 
+
+Problem 2.
+
+Instruction for how to build our assembler on a Linux system:
+0. In command line, go to the directory with SAS.java and loop.s
+1. If you do not have java installed in your Linux, install java by
+	sudo apt-get install default-jdk
+2. Compile java file by
+	javac SAS.java 
+3. Run the java class file by
+	java SAS <loop.s >loop.scram
+	with loop.s as input and loop.scram as output

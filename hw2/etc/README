@@ -1,0 +1,252 @@
+CSF Assignment 2 README
+Name: Joon Hyuck Choi
+JHED: jchoi100
+email: jchoi100@jhu.edu
+
+*Note: the diagrams for this assignment are attached as pdf.
+*Notation:
+	- NOT A = A'
+
+
+Problem 1
+
+(Please understand if the line alignment is funky. 
+I used Sublime Text2 to write this up, and once opened with Lubuntu's 
+default text editor, the indentation and spacing becomes messed up. 
+Sorry in advance!)
+
+  1.
+	  R   S  |   Logic                    | Meaning
+  ---------+----------------------------+--------------------------
+    0   0  | if Q = 1, then Q' = 0      |  HOLD (no changes)
+           | if Q = 0, then Q' = 1      |
+  ---------+----------------------------+-------------------------
+    0   1  | if Q = 1, then Q' = 0,     |  Set (Q = 1)
+           |           then Q  = 1,     |
+           | if Q = 0  then Q' = 0,     |
+           |           then Q  = 1,     |
+           |           then Q' = 0,     |          
+           |           then Q  = 1,     |
+  ---------+----------------------------+--------------------------
+    1   0  | if Q = 1, then Q' = 0,     |  Reset (Q = 0)
+           |           then Q  = 0,     |
+           |           then Q' = 1,     |          
+           |           then Q  = 0,     |
+           |           then Q' = 1,     |
+           | if Q = 0  then Q' = 1,     |
+           |           then Q  = 0,     |
+  ---------+----------------------------+--------------------------
+    1   1  | if Q = 1, then Q' = 0      |  Illegal
+           |           then Q  = 0,     |
+           |           then Q' = 0,     |          
+           |           then Q  = 0,     |
+           | if Q = 0  then Q' = 0,     |
+           |           then Q  = 0,     |
+
+	HOLD: When R = 0 and S = 0, if Q = 1, Q' = 0 does not change.
+	      Similarly, if Q = 0, then Q = 1 does not change.
+
+	Set: When R = 0 and S = 1, if Q = 1, then Q' = 0 remains.
+	     If Q = 0, then Q' = 0, then this causes Q = 1 and remains.
+	     Both cases set Q to 1.
+
+  Reset: When R = 1 and S = 0, if Q = 1, then Q' = 0, which causes
+         Q = 0, then Q' = 1, which remains.
+         If Q = 0, then Q' = 1, which remains. Both cases reset
+         Q to 0.
+
+  Illegal: When R = 1 and S = 1, if Q = 1, then Q' = 0, which
+           causes Q = 0, which remains.
+           If Q = 0, then Q' = 0, which remains.
+           In both cases, Q = Q', which contradicts our initial
+           assumption that Q and Q' are opposite of each other.
+           Thus, this is an illegal state.
+
+  2. Edge-triggered D-type Flip-flop
+
+  	1) Building a D-type Latch first
+  	First, let us build a D-type latch out of the NOR RS Latch. 
+  	The difference between the NOR latch and the NAND latch is that 
+  	the inputs to the illegal state are exactly opposite. Thus, 
+  	based on the NAND D-type latch's logic, we make two changes.
+    (The obvious thing to do first is to use a NOR RS latch instead
+    of a NAND RS latch.) First, we change the two NAND gates that 
+    send their outputs to R and S to two AND gates. This will make
+    sure that the exact opposite inputs will create illegal states
+    for our NOR D-type latch. However, this will switch the SET and
+    RESET inputs. Thus, we make one more change. Second, instead of
+    sending the negated D signal into the NAND gate whose output 
+    serves as the input to S, send the negated D signal into the AND
+    gate whose output serves as the input to R. 
+
+  	(Diagram is attached as pdf to make things clearer.)
+
+  	2) Building the Edge-triggered D-type Flip-flop
+  	We have now dealt with both R and S, and we have only one D.
+  	The construction of the edge-triggered flip-flop is the same as
+  	the one we had with the NAND gates. They have the same number of
+  	gates, same propagation delay. However, the difference from the
+  	previous one we saw in class is that our new flip-flop uses a 
+  	different type of D-type latch. Namely, the differences are that
+  	our new D-type latch uses AND gates instead of NAND gates when 
+  	producing output with D and D' to be used as input to R and S. 
+  	Also, the new D-type latch has the negated D signal be processed
+  	with the clock through and AND gate and passed into R, not S.
+
+
+Problem 2
+
+	Several things to keep in mind:
+	1) We only register the input i_n on high LD signal.
+	   On low LD signal, we shift.
+	2) On high DIR signal, we shift right.
+	   On low DIR signal, we shift left.
+
+	Since we have two different decisions being made on two different
+	signals, we are going to need two multiplexers (MUXes) for each
+  of the units that process each input i_n. (i = 0, 1, 2, 3)
+	One MUX will be used to channel out the LD signal, and the other
+	will be used to channel out the DIR signal.
+
+	We let the first MUX decide whether to shift bits left or right
+	by taking the DIR signal as the selection signal. On low signal,
+	we let the bit from the next flip-flop pass through. Since we are
+	taking the bit from the flip-flop on the right, we are shifting
+	bits left. Conversely, on high,	we let the bit from the previous 
+	flip-flop pass through. This will have the effect of shifting bits
+	to the right. We let the output of this MUX to go in as input
+	to the second MUX.
+
+	The second MUX will decide whether to sample and register the input
+	or to shift bits. It will take two inputs and a selection input. 
+	The selection input will obviously be the LD signal. On high, the
+	input will be sampled, so let our input i be connected to the high
+	channel input to the MUX. On low, we will shift. So let the output
+	from the previous MUX be connected to the low channel input to this
+	MUX. We let the output of this MUX serve as input to our flip-flop.
+
+	The flip-flop takes in the clock pulse and the output of the previous
+	MUX. The output of this flip-flop goes to a total of three places:
+	regular output, to the next MUX, and to the previous MUX.
+
+  Ultimately, we will end up with four of the units built in the way
+  I described in the paragraphs above. All the four units will get
+  identical DIR, LD, and Clock inputs. Each of the units' first MUX
+  will get two inputs for high and low. For high, it will get the
+  output of the previous unit's flip flop. For low, it will get the
+  output of the next unit's flip flop. (Consider the sequence of units
+  to wrap in the end when considering "previous" and "next" in case 
+  for the first and fourth units.) The second MUX will get two inputs
+  for hgh and low. For high, it will get the manual input i_n. For
+  low, it will get the output from the first MUX. 
+
+  Thus, we've explained how to build each of the four units that 
+  each deal with a single input i_n (where n = 0, 1, 2, 3) and
+  how to connect the four units to form the whole system.
+	(Diagram is attached as pdf to make things clearer.)
+
+
+Problem 3
+
+  Note: let us label the two 4-bit inputs A and B, and each of their bits
+        a_0, a_1, a_2, a_3, b_0, b_1, b_2, b_3.
+
+  First, we show how to do the four operations separatly and then show
+  how to put all of them together in a single unit using four MUXes.
+
+  1. AND
+  	AND is a binary operation. We do this on a bitwise level.
+  	We put a_i and b_i through an AND gate and produce an output q_i.
+  	(where i = 0, 1, 2, 3)
+
+  2. OR
+  	OR is also a binary operation. We do this on a bitwise level.
+  	We put a_i and b_i through an OR gate and produce an output q_i.
+  	(where i = 0, 1, 2, 3)
+
+  3. NOT
+  	NOT is a unary operation. We simply choose to negate each of
+  	a_0, a_1, a_2, and a_3 and output the results.
+
+  4. ADD
+  	We use a chain of full adders we saw in lecture. The full adder
+  	takes in 3 inputs: a_i, b_i, and c_in, which is the carry that
+  	was produced from the previous adder. The first adder that
+  	produces a sum for a_0 and b_0 will not take in a c_in since 
+  	there was no previous sum that could have generated a carry.
+  	Similarly, we will not care about the last adder (the one summing
+  	a_3 and b_3)'s c_out since we are producing a 4-bit output.
+  	The second, third, and fourth adders will get the c_out from
+  	the first, second, and third adders as their c_in respectively.
+
+  Combining all four operations into a single unit:
+  	In order to make an ALU that can do all four of the operations
+  	listed above, we use four multiplexers that each take 4 inputs 
+    and produce 1 output. As we saw in class, a MUX that takes
+  	4 inputs is going to need 2 bits of select signal so that each 
+    of 00, 01, 10, and 11 can "select" one of the inputs to serve as
+    the output. (For instance, let us arbitrarily choose without 
+    loss of generality that the select signal 00 will let the AND 
+    operation as output, 01 the OR operation, 10 the NOT operation, 
+    and 11 the ADD.)
+
+  	Each of the four multiplexers will take in each of the four
+  	outputs generated by the four operations on a_i and b_i.
+  	(With exception of the NOT operation which involves only a_i.)
+  	Then, based on the identical 2-bit select signal that all the
+  	four multiplexers will receive, we will produce an output for
+  	the operation that was selected.
+	(Diagram is attached as pdf to make things clearer.)
+
+
+Problem 4
+
+  1. 1MB = 1,048,576 bytes
+         = 2^20 bytes
+     1 byte = 2^3 bits
+
+     Note that one edge-triggered D-type master-slave flip-flop contains
+     two D-type latches. And each D-type latch saves 1 bit.
+
+     So the number of D-type latches we must consider is:
+     2 * (2^20) * 2^3 = 2^24 = 16777216.
+
+     Based on a basic fact from probability theory, the chance that all
+     D-type latches will function is the product of the probability
+     that each D-type latch will function. The probability that each
+     D-type latch will function correctly is 0.99999999.
+
+     So the final result is:
+     (0.99999999)^16777216 = 0.84554646081.
+
+     The probability that the 1 MB memory module will operate correctly
+     is 0.84554646081 or 84.554646081%.
+
+  2. 4GB = 4 * 1GB = 4 * 2^30 bytes
+                   = 2^32 bytes
+     1 byte = 2^3 bits and 2 D-type latches in each edge-triggered 
+     D-type master-slave flip-flop. (2^4 more to consider)
+
+     So the number of D-type latches we must consider is 2^36.
+     And the reliability for the memory we want is 99% = 0.99.
+     We will solve for x in the following equation, where x
+     is the reliability we want for each D-type latch.
+
+     x^(2^36) = 0.99 --> Put ln() on each side.
+
+     ln(x^(2^36)) = ln(0.99) = -0.01005033585
+     = (2^36) * ln(x)
+
+     Notice 2^36 = 68719476736.
+
+     ln(x) = -0.01005033585 / 68719476736 = -1.4625164e-13
+
+     Let's put a base of e on both sides.
+
+     e^(ln(x)) = e^-1.4625164e-13
+
+     = x ~= 0.99999999999985
+
+     So we need approximately 99.999999999985% reliability.
+
+<End of File>

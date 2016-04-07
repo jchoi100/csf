@@ -1,0 +1,57 @@
+600.233 Assignment 4
+Name: Joon Hyuck Choi
+JHED: jchoi100
+email: jchoi100@jhu.edu
+README
+
+1. thirtytwo.s
+	The big thing to watch out for in this
+	problem is that we need to clear the
+	carry flag before addition and set the 
+	carry flag before subtraciton.
+
+2. plot.s
+	The actual location we want to plot the
+	color is 32 * y + x. However, we cannot
+	just compute this directly. 
+	First, notice that the start of the plot is 
+	at $0200, and the end is at $05FF. We 
+	notice that there are 32*32 grids in this 
+	plot, and we can divide the entire plot 
+	into 4 quadrants. The first one from $0200 
+	~ $02FF. The second: $0300 ~ $03FF. 
+	Third: $0400 ~ $04FF. Last: $0500 ~ $05FF.
+	Notice there are 256 small grids in
+	each of these quadrants. Also, notice that
+	there are 8 rows each in each quadrant.
+	The rows correspond to the y coordinate and
+	thus each quadrant then has 8 y values.
+	First quadrant: y is from 0 ~ 7. Second
+	quadrant: y is from 8 ~ 15, third quadrant: 
+	y is from 16 ~ 23, fourth quadrant: 24 ~ 31.
+	So taking these facts into account, we 
+	compute (y mod 8) by first computing 
+	(y div 8) and floor(y). Then, we multiply
+	 this (y mod 8) with 32 and add x to it.
+	This portion will serve as the least 
+	significant byte address according to the 
+	little endian notation. Then, we take the
+	(y div 8) value and add $02 to it and use
+	this as the most significant byte. We add
+	$02 because the grid starts at $0200. 
+	(Notice that adding $02 to the most
+	significant byte will do the job here.)
+	We then store the color value in this 
+	2 byte address we just computed.
+ 
+3. sorting.s
+	I implemented the bubble sort for Problem 3.
+	Just like how the algorithm is implemented
+	in pseduocode, we have two loops. The loops
+	are expressed as subroutines with counters
+	checking the conditions to break out of the
+	subroutine or reiterate the loop.
+	The routine sorts the elements in ascending
+	order. And we store the indices to be 
+	swapped at address $10 and $11.
+

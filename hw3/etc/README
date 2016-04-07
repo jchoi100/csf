@@ -1,0 +1,154 @@
+600.233 Computer Systems Fundamentals
+Joon Hyuck Choi, Neha Kulkarni
+JHED ID: jchoi100, nkulkar5
+Email: jchoi100@jhu.edu / nkulkar5@jhu.edu
+Assignment 3. Attack of the Mutant SCRAM!
+
+Problem 1. Fix the SCRAM
+
+1. See attached diagram for corrected SCRAM drawing.
+
+2. Here we traced the diagram to identify the 
+corrected micro programs for the 
+SCRAM (except HLT) instructions as well as the FETCH cycle. 
+
+** Fetch cycle **
+t0  MAR <- PC              	 | x10 = 00, x4 = 1
+t1  MBR <- M, PC <- PC + 1 	 | x5 = 1, x7 = 0, x2 = 1, x13 = 1
+t2  IR <- MBR              	 | x1 = 1
+
+**LDA 0001**
+q1t3  MAR <- IR(lower)    	 | x10 = 01, x4 = 1
+q1t4  MBR <- M             	 | x7 = 0, x2 = 1
+q1t5  AC <- MBR            	 | x11 = 0, x12 = 1
+q1t6  reset timer          	 | x6 = 1
+
+**LDI 0010**
+q2t3  MAR <- IR(lower)    	 | x10 = 01, x4 = 1
+q2t4  MBR <- M            	 | x5 = 0, x2 = 1			
+q2t5  MAR <- MBR           	 | x10 = 10, x4 = 1
+q2t6  MBR <- M             	 | x7 = 0, x2 = 1		
+q2t7  AC <- MBR            	 | x11 = 0, x12 = 1
+q2t8  reset timer          	 | x6 = 1
+
+**STA 0011**
+q3t3  MAR <- IR(lower)		 | x10 = 01, x4 = 1	
+q3t4  MBR <- AC	 	    	 | x7 = 1		
+q3t5  M <- MBR               | x5 = 1
+q3t6  reset timer            | x6 = 1
+
+**STI 0100**
+q4t3  MAR <- IR(lower) 		 | x10 = 01, x4 = 1
+q4t4  MBR <- M         		 | x7 = 0, x2 = 1
+q4t5  MAR <- MBR       		 | x10 = 10, x4 = 1
+q4t6  MBR <- AC        		 | x7 = 1, x2 = 1
+q4t7  M <- MBR         		 | x5 = 0
+q4t8  reset timer      		 | x6 = 1
+
+**ADD 0101**
+q5t3  MAR <- IR(lower) 		 | x10 = 01, x4 = 1		
+q5t4  MBR <- M         		 | x5 = 0, x7 = 0, x2 = 1
+q5t5  AD <- MBR        		 | x9 = 1
+q5t6  RS <- ALU        		 | x8 = 0, x15 = 1
+q5t7  AC <- RS         	 	 | x11 = 1, x12 = 1
+q5t8  reset timer      		 | x6 = 1
+
+SUB 0110
+q6t3 | MAR <- IR(lower) 	 | x10 = 01, x4 = 1	
+q6t4 | MBR <- M        		 | x5 = 0, x7 = 0, x2 = 1
+q6t5 | AD <- MBR      	     | x9 = 1
+q6t6 | RS <- ALU        	 | x8 = 1, x15 = 1
+q6t7 | AC <- RS         	 | x11 = 1, x12 = 1
+q6t8 | reset timer      	 | x6 = 1
+
+JMP 0111
+q7t3 | PC <- IR(lower)  	 | x3 = 1, x14 = 0
+q7t4 | reset timer      	 | x6 = 1
+
+JMZ 1000
+q8t3 | PC <- IR(lower)  	 | x3 = 1, x14 = 1
+q8t4 | reset timer      	 | X6 = 1
+
+3. A narrative describing in detail the bugs you found, 
+how you fixed them, and why your fix is the smallest 
+possible correction within the parameters you were given.
+
+_____WRITTEN EXPLANATION_____
+
+We added the x8 wiring so that the ALU is able to select which 
+operationit needs to do, be it addition or subtraction. At the 
+moment this selection is impossible, but with our implementation 
+will add with x8 = 0 and will subtract with x8 = 1.
+
+Fundamentally the JMZ construction on the PDF did not wire the 
+AC to the PC, preventing the JMZ from running properly, so we 
+added wiring that allows 8-bit data to travel from the AC to 
+the PC. This model includes a control line, x14, which runs 
+the JMZ instruction when x14 = 1 and does not run the JMZ 
+instruction when x14 = 0. The information travels through an OR 
+gate which takes in the 8 bits as input and produces a 1 bit output. 
+If the AC has a 0, the OR gate produces a 0, while all other 
+combinations are 1. This allows the JMZ to operate correctly. 
+Specifically, if we aim to *not send a JMZ, x14 is set to 0, and 
+after the data goes through the NAND gate (see diagram), the 
+output will always be 1, implying the JMZ will never be activated. 
+On the other hand if the load, x14, is set to 1, the signal from 
+the AC ends up being 0 for the result to be 1. The signal along 
+with x3, and PC load is connected with an AND gate, 
+allowing the PC to receive input from IR when x3 is 1, allowing 
+the NAND gate to have a 1. 
+
+Additionally, for the signal that goes from the MBR to the MAR 
+via the MUX, we wired the lower 4-bits to input 2 of the MUX 
+and the upper 4 bits to input 3 of the MUX. The author doesn’t 
+specify in his implementation which of the 8 bits are wired 
+into the 4 bit input, and it’s necessary to do so. 
+
+Additionally we removed the circuitry connecting the PC to the 
+MUX connected to the AC and we also removed the circuitry connecting 
+the IR(0) to the MUX connected to the AC, as neither of these wires 
+were used or needed. 
+
+The wiring for x5 is 0 for read and 1 for write; if we don’t explicitly 
+specify x5 = 1, we assume it to be 0. Additionally we assumed all wiring 
+is a 1 bit line, unless otherwise denoted. If we didn't specify 
+explicitly, we assumed the selectors to be at 0.
+
+These are the smallest possible corrections because we are able to get 
+all the correct output simply by adding the x8 and x14 control lines, 
+adding 3 gates for the JMZ operation, and fixing the fact that the author 
+never explicitly indicated which of the 8 bit outputs of the MBR go into 
+the MAR via the MUX. These aren’t major changes and yet fix everything 
+about the cycles and instructions efficiently. 
+
+Problem 2: 
+
+We implemented our solution in Java.
+The file to compile and run is SAS.java.
+($ indicates the start of a terminate command)
+
+Steps to follow:
+
+1. How to compile:
+	$javac SAS.java
+
+2. How to run (several ways):
+	(assuming you have a .s file called loop.s in the same directory)
+
+	i) redirecting input and output automatically:
+		$java SAS <loop.s >loop.scram
+
+	ii) NO input redirect and YES output redirect
+		$java SAS >loop.scram
+		$your assembly input here... and ctrl+d to terminate.
+
+	iii) NO input redirect and NO output redirect
+		$java SAS
+		$your assembly input here... and ctrl+d to terminate.
+		$you will see the output printed to console.
+
+3. How to view results with dis.py: 
+	(assuming the process above created a file called "loop.scram")
+	$python dis.py <loop.scram
+
+<End of file>
