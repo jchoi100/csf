@@ -64,19 +64,11 @@ public final class BranchSim {
         while (xzScanner.hasNextLine()) {
             String oneLine = xzScanner.nextLine();
             Scanner lineScanner = new Scanner(oneLine);
-//            String source = null;
-//            String destin = null;
             String result = null;
-//            int sourceInt = 0;
-//            int destinInt = 0;
             try {
                 Integer.parseInt(lineScanner.next().trim(), SIXTEEN);
                 Integer.parseInt(lineScanner.next().trim(), SIXTEEN);
-//                source = lineScanner.next();
-//                destin = lineScanner.next();
                 result = lineScanner.next().trim();
-//                sourceInt = Integer.parseInt(source, SIXTEEN);
-//                destinInt = Integer.parseInt(destin, SIXTEEN);
             } catch (NumberFormatException nfe) {
                 System.err.println("Invalid input number format!");
                 System.exit(1);
@@ -109,19 +101,11 @@ public final class BranchSim {
         while (xzScanner.hasNextLine()) {
             String oneLine = xzScanner.nextLine();
             Scanner lineScanner = new Scanner(oneLine);
-//            String source = null;
-//            String destin = null;
             String result = null;
-//            int sourceInt = 0;
-//            int destinInt = 0;
             try {
                 Integer.parseInt(lineScanner.next().trim(), SIXTEEN);
                 Integer.parseInt(lineScanner.next().trim(), SIXTEEN);
-//                source = lineScanner.next();
-//                destin = lineScanner.next();
                 result = lineScanner.next().trim();
-//                sourceInt = Integer.parseInt(source, SIXTEEN);
-//                destinInt = Integer.parseInt(destin, SIXTEEN);
             } catch (NumberFormatException nfe) {
                 System.err.println("Invalid input number format!");
                 System.exit(1);
@@ -220,17 +204,13 @@ public final class BranchSim {
             String oneLine = xzScanner.nextLine();
             Scanner lineScanner = new Scanner(oneLine);
             String source = null;
-//            String destin = null;
             String result = null;
             int sourceInt = 0;
-//            int destinInt = 0;
             try {
                 source = lineScanner.next().trim();
-                Integer.parseInt(lineScanner.next().trim());
-//                destin = lineScanner.next().trim();
-                result = lineScanner.next().trim();
                 sourceInt = Integer.parseInt(source, SIXTEEN);
-//                destinInt = Integer.parseInt(destin, SIXTEEN);
+                Integer.parseInt(lineScanner.next().trim());
+                result = lineScanner.next().trim();
             } catch (NumberFormatException nfe) {
                 System.err.println("Invalid input format!");
                 break;
@@ -307,15 +287,11 @@ public final class BranchSim {
             Scanner lineScanner = new Scanner(oneLine);
             String source = "";
             int sourceInt = 0;
-//            String destin = "";
-//            int destinInt = 0;
             String result = "";
             try {
                 source = lineScanner.next().trim();
                 sourceInt = Integer.parseInt(source, SIXTEEN);
                 Integer.parseInt(lineScanner.next().trim(), SIXTEEN);
-//                destin = lineScanner.next().trim();
-//                destinInt = Integer.parseInt(destin, SIXTEEN);
                 result = lineScanner.next().trim();
             } catch (NumberFormatException nfe) {
                 System.err.println("Invalid input format!");
