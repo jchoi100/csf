@@ -10,6 +10,7 @@
 import java.util.Scanner;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
+import java.util.FileNotFoundException;
 
 /**
  * CacheSimulator class.
@@ -38,7 +39,7 @@ public final class CacheSimulator {
 
 
 
-        
+
         traceScanner.close();    	
     }
 
