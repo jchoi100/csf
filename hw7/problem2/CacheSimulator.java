@@ -133,21 +133,19 @@ public final class CacheSimulator {
                 System.exit(1);
             }
 
+            // Now, we have all the values we want.
+
+            //Check for type.
+
+
+
+
+
             lineScanner.close();
 
         }
 
         br.close();
-    }
-
-
-    /**
-     * Checks if a number is a power of 2.
-     * @param num the number to be tested.
-     * @return true if power of 2.
-     */
-    private static boolean isTwosPower(int num) {
-        return (num & (num - 1)) == 0;
     }
 
     /**
@@ -169,6 +167,9 @@ public final class CacheSimulator {
         // System.out.printf("%.2f\n", badPerc);
         // System.out.println("Size " + (long) size);
     }
+
+    /******************************************************************/
+    /** Input validation helper methods. */
 
     /**
      * Checks if the input file exists and opens.
@@ -245,7 +246,7 @@ public final class CacheSimulator {
      */
     private static boolean secondThirdCheck(int bytesPerBlock,
                                             int writeAllocate) {
-        return isTwosPower(bytesPerBlock)
+        return isTwosPower(bytesPerBlock) && bytesPerBlock >= 4
                 && (writeAllocate == 1 || writeAllocate == 0);
     }
 
@@ -259,6 +260,19 @@ public final class CacheSimulator {
         return (writeThrough == 1 || writeThrough == 0)
                 && (lru == 1 || lru == 0);
     }
+
+    /**
+     * Checks if a number is a power of 2.
+     * @param num the number to be tested.
+     * @return true if power of 2.
+     */
+    private static boolean isTwosPower(int num) {
+        return (num & (num - 1)) == 0;
+    }
+
+
+    /******************************************************************/
+    /** Main method. */
 
     /**
      * Main driver for this program.
