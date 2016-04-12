@@ -10,7 +10,7 @@
 import java.util.Scanner;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
-import java.util.FileNotFoundException;
+import java.io.FileNotFoundException;
 
 /**
  * CacheSimulator class.
@@ -73,7 +73,7 @@ public final class CacheSimulator {
         // System.out.println("Size " + (long) size);
     }
 
-    private static boolean allInputValid(String[] args) {
+    private static boolean allInputValid(String[] args) throws FileNotFoundException, NumberFormatException {
     	int numSets = 0;
     	int blocksPerSet = 0;
     	int bytesPerBlock = 0;
