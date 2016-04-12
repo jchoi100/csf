@@ -1,0 +1,12 @@
+600.233 Computer Systems Fundamentals
+Joon Hyuck Choi, Neha Kulkarni
+JHED ID: jchoi100, nkulkar5
+Email: jchoi100@jhu.edu / nkulkar5@jhu.edu
+Assignment 7. The Power of Caches
+
+Problem 1
+
+	SIZES = [1024, 4096, 8192, 16384]
+
+	Optimization Levels = [-O1, -O2, -O3]
+		-> how do the programs run for different opti levels and for the two index orderings?
