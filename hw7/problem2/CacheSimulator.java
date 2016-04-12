@@ -103,7 +103,7 @@ public final class CacheSimulator {
     	boolean numBytesPowTwo = isTwosPower(bytesPerBlock);
     	boolean writeAllocateValid = (writeAllocate == 1 || writeAllocate == 0);
     	boolean writeThroughValid = (writeThrough == 1 || writeThrough == 0);
-    	boolean writeAllocateAndWriteBack = (writeAllocate == 1 && writeThrough == 0);
+    	boolean noWriteAllocateAndWriteBack = (writeAllocate == 0 && writeThrough == 0);
     	boolean lruFIFOValid = (lru == 1 || lru == 0);
 
     	// Didn't check if user entered lru or FIFO for direct mapped caches.
@@ -115,14 +115,14 @@ public final class CacheSimulator {
         System.out.println("numBytesPowTwo: " + numBytesPowTwo);
         System.out.println("writeAllocateValid: " + writeAllocateValid);
         System.out.println("writeThroughValid: " + writeThroughValid);
-        System.out.println("!writeAllocateAndWriteBack: " + !writeAllocateAndWriteBack);
+        System.out.println("!noWriteAllocateAndWriteBack: " + !noWriteAllocateAndWriteBack);
         System.out.println("lruFIFOValid: " + lruFIFOValid);
 
 
 
     	if (numSetsPowTwo && numBlocksPowTwo && numBytesPowTwo
     		&& writeAllocateValid && writeThroughValid 
-    		&& !writeAllocateAndWriteBack && lruFIFOValid) {
+    		&& !noWriteAllocateAndWriteBack && lruFIFOValid) {
     		return true;
     	} else {
     		return false;
