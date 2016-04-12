@@ -92,10 +92,10 @@ public final class CacheSimulator {
     	} catch (NumberFormatException nfe) {
     		System.err.println("Input number format error!");
     		System.exit(1);
-    	} catch (FileNotFoundException fnfe) {
+    	}/* catch (FileNotFoundException fnfe) {
      		System.err.println("Input file not found!");
     		System.exit(1);   		
-    	}
+		}*/
 
     	
     	boolean numSetsPowTwo = isTwosPower(numSets);
@@ -110,6 +110,8 @@ public final class CacheSimulator {
     	// If the configuration is set for a direct mapped cache, but the 
     	// user entered lru or FIFO, just ignore.
 
+	System.out.println("numSetsPowTwo: " + numSetsPowTwo);
+	
     	if (numSetsPowTwo && numBlocksPowTwo && numBytesPowTwo
     		&& writeAllocateValid && writeThroughValid 
     		&& !writeAllocateAndWriteBack && lruFIFOValid) {
@@ -136,16 +138,16 @@ public final class CacheSimulator {
     	// args[4]: write-through (1) or write-back (0)
     	// args[5]: least-recently-used (1) or FIFO (0) evictions
     	// args[6]: input trace file
-
+	
         if (args.length != 7) {
-            System.err.println("You should specify at least one argument!");
+            System.err.println("Wrong number of arguments!");
             System.exit(1);
         }
 
         if (allInputValid(args)) {
         	executeSimulation(args);
         } else {
-        	System.err.println("You should specify at least one argument!");
+        	System.err.println("Invalid input!");
         	System.exit(1);
         }
     }
