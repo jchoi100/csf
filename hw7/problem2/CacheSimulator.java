@@ -299,42 +299,62 @@ public final class CacheSimulator {
         // Don't ignore write miss.
         numStores++;
         if (cache.containsKey(index)) { // Something is in cache.
-            if (cache.get(index).tag == tag) { // Hit!
+            ArrayList<CacheSlot> bucketList = cache.get(index);
+            int position - bucketListContainsSlot(bucketList, tag);           
+            if (position != -1) { // Hit!
                 numStoreHits++;
-                cache.get(index).dirty = true;
+                bucketList.get(position).dirty = true;
+                if (lru) {
+                    CacheSlot beingStored = bucketList.get(position);
+                    bucketList.remove(position);
+                    bucketList.add(0, beingStored);    
+                }
                 numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
             } else { // Miss!
                 numStoreMisses++;
-                if (!cache.get(index).dirty) { // not dirty
-                    // Just read in the new index and tag from
-                    // memory and write this new data.
-                    // First, fetch the correct slot from memory
+                // First, check if the bucket is full
+                // If not, load from memory this data
+                // to the front and change it and mark dirty.
+                // If so, evict one block and do the same.
+                CacheSlot toAdd = new CacheSlot(index, tag, 0);
+                toAdd.dirty = true;
+                if (bucketList.size() < blocksPerSet) {
+                    bucketList.add(0, toAdd);
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                    cache.get(index).tag = tag;
-                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
-                    cache.get(index).dirty = true;
-                    // Write new data to the thing in cache.
-                } else { // slot is dirty
-                    // Write this guy to memory first, and then
-                    // read block for our address, and then
-                    // write the new data.
-                    // First, write the dirty block to memory.
-                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                    // Second, read the correct block from memory.
-                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                    cache.get(index).tag = tag;
-                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
-                    cache.get(index).dirty = true;
-                    // Third, write the new stuff in cache.
+                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);                    
+                } else {
+                    // Need to evict something now.
+                    // In both LRU and FIFO, remove the last one.
+                    if (!bucketList.get(bucketList.size() - 1).dirty) {
+                        // Just evict without further action.
+                        // Load new guy from memory
+                        numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                        // Write to new guy in cache
+                        numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                    } else { // dirty!
+                        // Write this guy to memory first
+                        numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                        // Bring new guy into cache from memory
+                        numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                        // Write to new guy in cache
+                        numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                    }
+                    bucketList.remove(bucketList.size() - 1);
+                    bucketList.add(0, toAdd);
                 }
             }
         } else { // Miss: Cache has nothing corresponding to the given index.
             numStoreMisses++;
             // First, read from memory the correct block.
+            // First, create a new bucket to reside in cache.
+            ArrayList<CacheSlot> bucket = new ArrayList<>();
+            // Fetch data from memory into cache.
+            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
             CacheSlot toAdd = new CacheSlot(index, tag, 0);
             toAdd.dirty = true;
-            cache.put(index, toAdd);
-            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+            bucket.add(toAdd);
+            cache.put(index, bucket);
+            // Write the result to thing in cache.
             numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
         }
     }
@@ -351,28 +371,41 @@ public final class CacheSimulator {
         // Don't ignore write miss.
         numStores++;
         if (cache.containsKey(index)) { // Something is in cache.
-            CacheSlot slot = cache.get(index);
-            if (slot.tag == tag) { // Hit!
+            ArrayList<CacheSlot> bucketList = cache.get(index);
+            int position = bucketListContainsSlot(bucketList, tag);
+            if (position != -1) { // Hit!
                 numStoreHits++;
-                cache.get(index).dirty = true;
+                if (lru) {
+                    CacheSlot beingStored = bucketList.get(position);
+                    bucketList.remove(position);
+                    bucketList.add(0, beingStored);
+                }
                 numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
             } else { // Miss!
                 numStoreMisses++;
+                CacheSlot toAdd = new CacheSlot(index, tag, 0);
+                // If bucektlist full, evict the last one.
+                if (bucketList.size() >= blocksPerSet) {
+                    bucketList.remove(bucketList.size() - 1);
+                }
                 // First, write to cache.
-                cache.get(index).tag = tag;
+                bucketList.add(0, toAdd);
                 numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                 // Then, write to memory
                 numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
             }
         } else { // Miss: Cache has nothing corresponding to the given index.
             numStoreMisses++;
+            // First, need to create the right bucket.
+            ArrayList<CacheSlot> bucket = new ArrayList<>();
             // First, read from memory the correct block.
             numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-            // Then, write to cache.
             CacheSlot toAdd = new CacheSlot(index, tag, 0);
-            cache.put(index, toAdd);
+            // Then, write to cache.
+            bucket.add(toAdd);
+            cache.put(index, bucket);
             numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
-            // Then, write to memory.
+            // Then, write this again to memory.
             numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
         }
     }
@@ -391,10 +424,15 @@ public final class CacheSimulator {
         // and is written directly to the backing store.
         numStores++;
         if (cache.containsKey(index)) { // Something is in cache.
-            CacheSlot slot = cache.get(index);
-            if (slot.tag == tag) { // Hit!
+            ArrayList<CacheSlot> bucketList = cache.get(index);
+            int position = bucketListContainsSlot(bucketList, tag);
+            if (position != -1) { // Hit!
+                if (lru) {
+                    CacheSlot beingStored = bucketList.get(position);
+                    bucketList.remove(position);
+                    bucektList.add(0, beingStored);
+                }
                 numStoreHits++;
-                cache.get(index).dirty = true;
                 numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
             } else { // Miss!
                 numStoreMisses++;
