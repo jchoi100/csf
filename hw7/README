@@ -10,3 +10,12 @@ Problem 1
 
 	Optimization Levels = [-O1, -O2, -O3]
 		-> how do the programs run for different opti levels and for the two index orderings?
+
+
+Problem 2
+
+	--> implemented for direct-map, write back, write allocate.
+
+		--> doesn't work yet...
+
+		--> Also, need to generalize to non-direct-map, write-through, non write allocate , (lru, fifo)
