@@ -228,7 +228,7 @@ public final class CacheSimulator {
             ArrayList<CacheSlot> bucketList = cache.get(index);
             int position = bucketListContainsSlot(bucketList, tag);
             if (position != -1) { // hit!
-                if (lru) {
+                if (lru == 1) {
                     //Bring that slot to the front of the arraylist
                     CacheSlot beingLoaded = bucketList.get(position);
                     bucketList.remove(position);
@@ -304,7 +304,7 @@ public final class CacheSimulator {
             if (position != -1) { // Hit!
                 numStoreHits++;
                 bucketList.get(position).dirty = true;
-                if (lru) {
+                if (lru == 1) {
                     CacheSlot beingStored = bucketList.get(position);
                     bucketList.remove(position);
                     bucketList.add(0, beingStored);    
@@ -375,7 +375,7 @@ public final class CacheSimulator {
             int position = bucketListContainsSlot(bucketList, tag);
             if (position != -1) { // Hit!
                 numStoreHits++;
-                if (lru) {
+                if (lru == 1) {
                     CacheSlot beingStored = bucketList.get(position);
                     bucketList.remove(position);
                     bucketList.add(0, beingStored);
@@ -427,7 +427,7 @@ public final class CacheSimulator {
             ArrayList<CacheSlot> bucketList = cache.get(index);
             int position = bucketListContainsSlot(bucketList, tag);
             if (position != -1) { // Hit!
-                if (lru) {
+                if (lru == 1) {
                     CacheSlot beingStored = bucketList.get(position);
                     bucketList.remove(position);
                     bucektList.add(0, beingStored);
