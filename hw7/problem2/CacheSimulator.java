@@ -71,7 +71,7 @@ public final class CacheSimulator {
 
         long cacheSize = numSets * blocksPerSet * bytesPerBlock;
 
-        while (traceScanner.hasNext()) {
+        while (traceScanner.hasNextLine()) {
             String oneLine = traceScanner.nextLine();
             Scanner lineScanner = new Scanner(oneLine);
             String type = "";
@@ -83,6 +83,8 @@ public final class CacheSimulator {
                 type = lineScanner.next().trim();
                 address = lineScanner.next().trim().substring(2);
                 thirdCol = lineScanner.next().trim();
+                System.out.println(type);
+                System.out.println(address);
                 addressInt = Integer.parseInt(address, SIXTEEN);
             } catch (NoSuchElementException nse) {
                 System.err.println("Wrong number of fields in trace file!");
@@ -92,7 +94,7 @@ public final class CacheSimulator {
                 System.exit(1);
             }
 
-
+            lineScanner.close();
 
         }
 
