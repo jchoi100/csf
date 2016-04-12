@@ -141,18 +141,62 @@ public final class CacheSimulator {
 
             // Now, we have both the index and tag.
 
-            // Do the actual simulation.
-            if (type.equalsIgnoreCase("l")) {
-                loadExecute(index, tag, bytesPerBlock);
-            } else if (type.equalsIgnoreCase("s")) { // Store case.
-                storeExecute(index, tag, bytesPerBlock);
-            } else { // error case.
-                System.err.println("Wrong command type: l or s!");
-                System.exit(1);
+            if (writeAllocate == 1 && writeThrough == 0) {
+                // Write back, write allocate
+                writeBackYesAllocate(type, index, tag, bytesPerBlock);
+            } else if (writeAllocate == 1 && writeThrough == 1) {
+                // Write through, write allocate
+                writeThroughYesAllocate();
+            } else { //writeAllocate == 0 && writeThrough == 1
+                // Write through, no write allocate
+                writeThroughNoAllocate();
             }
+
             lineScanner.close();
         }
         br.close();
+    }
+
+    private static void writeBackYesAllocate(String type, long index,
+                                             long tag, int bytesPerBlock) {
+        // Use dirty bit.
+        // Don't ignore write miss.
+        if (type.equalsIgnoreCase("l")) {
+            loadExecute(index, tag, bytesPerBlock);
+        } else if (type.equalsIgnoreCase("s")) { // Store case.
+            storeExecute1(index, tag, bytesPerBlock);
+        } else { // error case.
+            System.err.println("Wrong command type: l or s!");
+            System.exit(1);
+        }
+    }
+
+    private static void writeThroughYesAllocate(String type, long index,
+                                                long tag, int bytesPerBlock) {
+        // Don't use dirty bit --> write to both cache and RAM simultaneously.
+        // Don't ignore write miss.
+        if (type.equalsIgnoreCase("l")) {
+            loadExecute(index, tag, bytesPerBlock);
+        } else if (type.equalsIgnoreCase("s")) { // Store case.
+            storeExecute2(index, tag, bytesPerBlock);
+        } else { // error case.
+            System.err.println("Wrong command type: l or s!");
+            System.exit(1);
+        }
+    }
+
+    private static void writeThroughNoAllocate(String type, long index, long tag,
+                                               int bytesPerBlock) {
+        // Don't use dirty bit --> write to both cache and RAM simultaneously.
+        // Ignore write miss.
+        if (type.equalsIgnoreCase("l")) {
+            loadExecute(index, tag, bytesPerBlock);
+        } else if (type.equalsIgnoreCase("s")) { // Store case.
+            storeExecute3(index, tag, bytesPerBlock);
+        } else { // error case.
+            System.err.println("Wrong command type: l or s!");
+            System.exit(1);
+        }
     }
 
     /**
@@ -170,22 +214,17 @@ public final class CacheSimulator {
                 numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
             } else { // The tag doesn't match!
                 numLoadMisses++;
-                if (!slot.dirty) {
-                    // Not dirty. Just load the new stuff in.
-                    CacheSlot toAdd = new CacheSlot(index, tag, 0);
-                    cache.remove(index);
-                    cache.put(index, toAdd);
+                if (!slot.dirty) { // Not dirty. Just load the new stuff in.
+                    cache.get(index).tag = tag;
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
-                } else {
+                } else { //Dirty.
                     // Need to write the dirty data to memory.
                     // But we don't have data. Just pretend.
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     // Now, load the new memory contents in cache.
                     // Change the tag and valid bit.
-                    CacheSlot toAdd = new CacheSlot(index, tag, 0);
-                    cache.remove(index);
-                    cache.put(index, toAdd);
+                    cache.get(index).tag = tag;
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                 }
@@ -208,7 +247,9 @@ public final class CacheSimulator {
      * @param tag tag in cache.
      * @param bytesPerBlock Bytes per block.
      */
-    private static void storeExecute(long index, long tag, int bytesPerBlock) {
+    private static void storeExecute1(long index, long tag, int bytesPerBlock) {
+        // Use dirty bit.
+        // Don't ignore write miss.
         numStores++;
         if (cache.containsKey(index)) { // Something is in cache.
             CacheSlot slot = cache.get(index);
@@ -218,15 +259,13 @@ public final class CacheSimulator {
                 numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
             } else { // Miss!
                 numStoreMisses++;
-                CacheSlot toAdd = new CacheSlot(index, tag, 0);
-                toAdd.dirty = true;
                 if (!slot.dirty) { // not dirty
                     // Just read in the new index and tag from
                     // memory and write this new data.
                     // First, fetch the correct slot from memory
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                    cache.remove(index);
-                    cache.put(index, toAdd);
+                    cache.get(index).tag = tag;
+                    cache.get(index).dirty = true;
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                     // Write new data to the thing in cache.
                 } else { // slot is dirty
@@ -236,8 +275,8 @@ public final class CacheSimulator {
                     // First, write the dirty block to memory.
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     // Second, read the correct block from memory.
-                    cache.remove(index);
-                    cache.put(index, toAdd);
+                    cache.get(index).tag = tag;
+                    cache.get(index).dirty = true;
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                     // Third, write the new stuff in cache.
@@ -255,17 +294,72 @@ public final class CacheSimulator {
         }
     }
 
+
+    /**
+     * Execution for store case.
+     * @param index index into cache.
+     * @param tag tag in cache.
+     * @param bytesPerBlock Bytes per block.
+     */
+    private static void storeExecute2(long index, long tag, int bytesPerBlock) {
+        // Don't use dirty bit --> write to both cache and RAM simultaneously.
+        // Don't ignore write miss.
+        numStores++;
+        if (cache.containsKey(index)) { // Something is in cache.
+            CacheSlot slot = cache.get(index);
+            if (slot.tag == tag) { // Hit!
+                numStoreHits++;
+                cache.get(index).dirty = true;
+                numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+            } else { // Miss!
+                numStoreMisses++;
+                // First, write to cache.
+                cache.get(index).tag = tag;
+                numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                // Then, write to memory
+                numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+            }
+        } else { // Miss: Cache has nothing corresponding to the given index.
+            numStoreMisses++;
+            // First, read from memory the correct block.
+            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+            // Then, write to cache.
+            CacheSlot toAdd = new CacheSlot(index, tag, 0);
+            cache.put(index, toAdd);
+            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+            // Then, write to memory.
+            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+        }
+    }
+
+    /**
+     * Execution for store case.
+     * @param index index into cache.
+     * @param tag tag in cache.
+     * @param bytesPerBlock Bytes per block.
+     */
+    private static void storeExecute3(long index, long tag, int bytesPerBlock) {
+        // Don't use dirty bit --> write to both cache and RAM simultaneously.
+        // Ignore write miss.
+ 
+    }
+
+    // Need to do: write storeExecute3.
+    // Need to do: take set associativity into consideration.
+    // Need to do: make sure cycle addition is correct.
+    // Need to do: make sure hit vs. miss is correct.
+
     /**
      * Prints the result of prediction simulation on stdout.
      */
     private static void printRes() {
-         System.out.println("Total loads: " + numLoads);
-         System.out.println("Total stores: " + numStores);
-         System.out.println("Load hits: " + numLoadHits);
-         System.out.println("Load misses: " + numLoadMisses);
-         System.out.println("Store hits: " + numStoreHits);
-         System.out.println("Store misses: " + numStoreMisses);
-         System.out.println("Total cycles: " + numCycles);
+        System.out.println("Total loads: " + numLoads);
+        System.out.println("Total stores: " + numStores);
+        System.out.println("Load hits: " + numLoadHits);
+        System.out.println("Load misses: " + numLoadMisses);
+        System.out.println("Store hits: " + numStoreHits);
+        System.out.println("Store misses: " + numStoreMisses);
+        System.out.println("Total cycles: " + numCycles);
     }
 
     /******************************************************************/
@@ -322,10 +416,8 @@ public final class CacheSimulator {
         // Didn't check if user entered lru or FIFO for direct mapped caches.
         // If the configuration is set for a direct mapped cache, but the
         // user entered lru or FIFO, just ignore.
-
         return firstThirdValid && secondThirdValid && lastThirdValid
                 && !noWriteAllocWriteBack;
-
     }
 
     /**
@@ -369,7 +461,6 @@ public final class CacheSimulator {
     private static boolean isTwosPower(int num) {
         return (num & (num - 1)) == 0;
     }
-
 
     /******************************************************************/
     /** Main method. */
