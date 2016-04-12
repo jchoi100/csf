@@ -241,20 +241,14 @@ public final class CacheSimulator {
      * Prints the result of prediction simulation on stdout.
      */
     private static void printRes() {
-        // double goodPerc = 0;
-        // double badPerc = 0;
-        // if (numLines != 0) {
-        //     goodPerc = (correctPredictions / numLines) * PERCENTAGE;
-        //     badPerc = (wrongPredictions / numLines) * PERCENTAGE;
-        // }
-        // System.out.println("Total " + (long) numLines);
-        // System.out.println("Good " + (long) correctPredictions);
-        // System.out.println("Bad " + (long) wrongPredictions);
-        // System.out.print("Good% ");
-        // System.out.printf("%.2f\n", goodPerc);
-        // System.out.print("Bad% ");
-        // System.out.printf("%.2f\n", badPerc);
-        // System.out.println("Size " + (long) size);
+         System.out.println("Total loads: " + numLoads);
+         System.out.println("Total stores: " + numStores);
+         System.out.println("Load hits: " + numLoadHits);
+         System.out.println("Load misses: " + numLoadMisses);
+         System.out.println("Store hits: " + numStoreHits);
+         System.out.println("Store misses: " + numStoreMisses);
+         System.out.println("Total cycles: " + numCycles);
+
     }
 
     /******************************************************************/
@@ -388,6 +382,7 @@ public final class CacheSimulator {
 
         if (allInputValid(args) && fileValid(args[SIX])) {
             executeSimulation(args);
+            printRes();
         } else {
             System.err.println("Invalid input!");
             System.exit(1);
