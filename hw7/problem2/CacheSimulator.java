@@ -97,9 +97,11 @@ public final class CacheSimulator {
         int numSets = Integer.parseInt(args[0]);
         int blocksPerSet = Integer.parseInt(args[1]);
         int bytesPerBlock = Integer.parseInt(args[2]);
+
         int writeAllocate = Integer.parseInt(args[THREE]);
         int writeThrough = Integer.parseInt(args[FOUR]);
         int lru = Integer.parseInt(args[FIVE]);
+        
         long cacheSize = numSets * blocksPerSet * bytesPerBlock;
         String oneLine = "";
         
