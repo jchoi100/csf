@@ -102,11 +102,14 @@ public final class CacheSimulator {
         int lru = Integer.parseInt(args[FIVE]);
         long cacheSize = numSets * blocksPerSet * bytesPerBlock;
         String oneLine = "";
-
+        
         //Number of bits to take from the address to index to cache.
         int indexLength = (int) (Math.log(numSets) / Math.log(2));
         int tagLength = THIRTYTWO - indexLength;
 
+        System.out.println("indexLen: " + indexLength);
+        System.out.println("tagLen: " + tagLength);
+        
         while ((oneLine = br.readLine()) != null) {
             Scanner lineScanner = new Scanner(oneLine);
             String type = "";
@@ -141,91 +144,110 @@ public final class CacheSimulator {
 
             // Do the actual simulation.
             if (type.equalsIgnoreCase("l")) {
-                numLoads++;
-                if (cache.containsKey(index)) {
-                    CacheSlot slot = cache.get(index);
-                    if (slot.valid && slot.tag == tag) { // hit!
-                        numLoadHits++;
-                        numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
-                    } else { // The tag doesn't match!
-                        numLoadMisses++;
-                        if (!slot.dirty) {
-                            // Not dirty. Just load the new stuff in.
-                            cache.get(index).tag = tag;
-                            cache.get(index).valid = true;
-                            cache.get(index).dirty = false;
-                            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
-                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                        } else {
-                            // Need to write the dirty data to memory.
-                            // But we don't have data. Just pretend.
-                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                            // Now, load the new memory contents in cache.
-                            // Change the tag and valid bit.
-                            cache.get(index).tag = tag;
-                            cache.get(index).valid = true;
-                            cache.get(index).dirty = false;
-                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
-                        }
-                    }
-                } else { // No cache for the index whatsoever!
-                    numLoadMisses++;
-                    // Need to load data from memory from scratch.
-                    // Need to insert result into cache.
-                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                    CacheSlot toAdd = new CacheSlot(index, true, tag, 0);
-                    cache.put(index, toAdd);
-                    // Then return result in cache to CPU.
-                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
-                }
+                loadExecute(index, tag, bytesPerBlock);
             } else if (type.equalsIgnoreCase("s")) { // Store case.
-                numStores++;
-                if (cache.containsKey(index)) { // Something is in cache.
-                    CacheSlot slot = cache.get(index);
-                    if (slot.valid && slot.tag == tag) { // What we wanted.
-                        numStoreHits++;
-                        /*******DOES THIS SPEND ANY CYLCES??*********/
-                    } else { // Miss!
-                        numStoreMisses++;
-                        cache.get(index).valid = true;
-                        cache.get(index).dirty = true;
-                        if (!slot.dirty) { // not dirty
-                            // Just read in the new index and tag from
-                            // memory and write this new data.
-                            // First, fetch the correct slot from memory
-                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                            cache.get(index).tag = tag;
-                            // Write new data to the thing in cache.
-                        } else { // slot is dirty
-                            // Write this guy to memory first, and then
-                            // read block for our address, and then
-                            // write the new data.
-                            // First, write the dirty block to memory.
-                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                            // Second, read the correct block from memory.
-                            cache.get(index).tag = tag;
-                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                            // Third, write the new stuff in cache.
-                        }
-                    }
-                } else { // Cache has nothing corresponding to the given index.
-                    numStoreMisses++;
-                    // First, read from memory the correct block.
-                    CacheSlot toAdd = new CacheSlot(index, true, tag, 0);
-                    cache.put(index, toAdd);
-                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                    // Second, write this to cache.
-                    cache.get(index).dirty = true;
-                }
-            } else {
-                //error case.
+                storeExecute(index, tag, bytesPerBlock);
+            } else { // error case.
                 System.err.println("Wrong command type: l or s!");
                 System.exit(1);
             }
             lineScanner.close();
         }
         br.close();
+    }
+
+    /**
+     * Execution for load case.
+     * @param index index into cache.
+     * @param tag tag in cache.
+     * @param bytesPerBlock Bytes per block.
+     */
+    private static void loadExecute(long index, long tag, int bytesPerBlock) {
+        numLoads++;
+        if (cache.containsKey(index)) {
+            CacheSlot slot = cache.get(index);
+            if (slot.valid && slot.tag == tag) { // hit!
+                numLoadHits++;
+                numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+            } else { // The tag doesn't match!
+                numLoadMisses++;
+                if (!slot.dirty) {
+                    // Not dirty. Just load the new stuff in.
+                    cache.get(index).tag = tag;
+                    cache.get(index).valid = true;
+                    cache.get(index).dirty = false;
+                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                } else {
+                    // Need to write the dirty data to memory.
+                    // But we don't have data. Just pretend.
+                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                    // Now, load the new memory contents in cache.
+                    // Change the tag and valid bit.
+                    cache.get(index).tag = tag;
+                    cache.get(index).valid = true;
+                    cache.get(index).dirty = false;
+                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                }
+            }
+        } else { // No cache for the index whatsoever!
+            numLoadMisses++;
+            // Need to load data from memory from scratch.
+            // Need to insert result into cache.
+            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+            CacheSlot toAdd = new CacheSlot(index, true, tag, 0);
+            cache.put(index, toAdd);
+            // Then return result in cache to CPU.
+            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+        }
+    }
+
+    /**
+     * Execution for store case.
+     * @param index index into cache.
+     * @param tag tag in cache.
+     * @param bytesPerBlock Bytes per block.
+     */
+    private static void storeExecute(long index, long tag, int bytesPerBlock) {
+        numStores++;
+        if (cache.containsKey(index)) { // Something is in cache.
+            CacheSlot slot = cache.get(index);
+            if (slot.valid && slot.tag == tag) { // What we wanted.
+                numStoreHits++;
+                /*******DOES THIS SPEND ANY CYLCES??*********/
+            } else { // Miss!
+                numStoreMisses++;
+                cache.get(index).valid = true;
+                cache.get(index).dirty = true;
+                if (!slot.dirty) { // not dirty
+                    // Just read in the new index and tag from
+                    // memory and write this new data.
+                    // First, fetch the correct slot from memory
+                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                    cache.get(index).tag = tag;
+                    // Write new data to the thing in cache.
+                } else { // slot is dirty
+                    // Write this guy to memory first, and then
+                    // read block for our address, and then
+                    // write the new data.
+                    // First, write the dirty block to memory.
+                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                    // Second, read the correct block from memory.
+                    cache.get(index).tag = tag;
+                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                    // Third, write the new stuff in cache.
+                }
+            }
+        } else { // Cache has nothing corresponding to the given index.
+            numStoreMisses++;
+            // First, read from memory the correct block.
+            CacheSlot toAdd = new CacheSlot(index, true, tag, 0);
+            cache.put(index, toAdd);
+            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+            // Second, write this to cache.
+            cache.get(index).dirty = true;
+        }
     }
 
     /**
