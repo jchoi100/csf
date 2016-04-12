@@ -11,6 +11,9 @@ import java.util.Scanner;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.io.FileNotFoundException;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 /**
  * CacheSimulator class.
@@ -67,12 +70,11 @@ public final class CacheSimulator {
         int writeAllocate = Integer.parseInt(args[3]);
         int writeThrough = Integer.parseInt(args[4]);
         int lru = Integer.parseInt(args[5]);
-        Scanner traceScanner = new Scanner(args[6]);
-
         long cacheSize = numSets * blocksPerSet * bytesPerBlock;
+        BufferedReader br = new BufferedReader(new FileReader(INPUT_FILE));
+        String oneLine = "";
 
-        while (traceScanner.hasNextLine()) {
-            String oneLine = traceScanner.nextLine();
+        while ((oneLine = br.readLine()) != null) {
             Scanner lineScanner = new Scanner(oneLine);
             String type = "";
             String address = "";
@@ -100,7 +102,7 @@ public final class CacheSimulator {
 
         }
 
-        traceScanner.close();    	
+        br.close();    	
     }
 
 
@@ -133,13 +135,13 @@ public final class CacheSimulator {
         // System.out.println("Size " + (long) size);
     }
 
-    private static boolean allInputValid(String[] args) throws FileNotFoundException {
-    	int numSets = 0;
-    	int blocksPerSet = 0;
-    	int bytesPerBlock = 0;
-    	int writeAllocate = 0;
-    	int writeThrough = 0;
-    	int lru = 0;
+    private static boolean allInputValid(String[] args) throws IOException {
+        int numSets = 0;
+        int blocksPerSet = 0;
+        int bytesPerBlock = 0;
+        int writeAllocate = 0;
+        int writeThrough = 0;
+        int lru = 0;
 
     	try {
     		numSets = Integer.parseInt(args[0]);
@@ -148,11 +150,15 @@ public final class CacheSimulator {
     		writeAllocate = Integer.parseInt(args[3]);
     		writeThrough = Integer.parseInt(args[4]);
     		lru = Integer.parseInt(args[5]);
-    		Scanner traceScanner = new Scanner(args[6]);
+            File file = new File(args[6]);
+            BufferedReader br = new BufferedReader(new FileReader(file));
     	} catch (NumberFormatException nfe) {
     		System.err.println("Input number format error!");
     		System.exit(1);
-    	}
+    	} catch (IOException ioe) {
+            System.err.println("File does not exist!");
+            System.exit(1);            
+        }
     	
     	boolean numSetsPowTwo = isTwosPower(numSets);
     	boolean numBlocksPowTwo = isTwosPower(blocksPerSet);
