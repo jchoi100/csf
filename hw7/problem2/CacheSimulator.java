@@ -73,7 +73,7 @@ public final class CacheSimulator {
         // System.out.println("Size " + (long) size);
     }
 
-    private static boolean allInputValid(String[] args) throws FileNotFoundException, NumberFormatException {
+    private static boolean allInputValid(String[] args) throws FileNotFoundException {
     	int numSets = 0;
     	int blocksPerSet = 0;
     	int bytesPerBlock = 0;
@@ -124,7 +124,7 @@ public final class CacheSimulator {
      * Main driver for this program.
      * @param args Input arguments for this program.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
 
     	// Sample command line input:
     	// java CacheSimulator 256 4 16 1 0 1 gcc.trace
