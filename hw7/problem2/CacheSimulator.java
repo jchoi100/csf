@@ -430,7 +430,7 @@ public final class CacheSimulator {
                 if (lru == 1) {
                     CacheSlot beingStored = bucketList.get(position);
                     bucketList.remove(position);
-                    bucektList.add(0, beingStored);
+                    bucketList.add(0, beingStored);
                 }
                 numStoreHits++;
                 numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
