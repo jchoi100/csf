@@ -146,10 +146,10 @@ public final class CacheSimulator {
                 writeBackYesAllocate(type, index, tag, bytesPerBlock);
             } else if (writeAllocate == 1 && writeThrough == 1) {
                 // Write through, write allocate
-                writeThroughYesAllocate();
+                writeThroughYesAllocate(type, index, tag, bytesPerBlock);
             } else { //writeAllocate == 0 && writeThrough == 1
                 // Write through, no write allocate
-                writeThroughNoAllocate();
+                writeThroughNoAllocate(type, index, tag, bytesPerBlock);
             }
 
             lineScanner.close();
@@ -208,13 +208,12 @@ public final class CacheSimulator {
     private static void loadExecute(long index, long tag, int bytesPerBlock) {
         numLoads++;
         if (cache.containsKey(index)) {
-            CacheSlot slot = cache.get(index);
-            if (slot.tag == tag) { // hit!
+            if (cache.get(index).tag == tag) { // hit!
                 numLoadHits++;
                 numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
             } else { // The tag doesn't match!
                 numLoadMisses++;
-                if (!slot.dirty) { // Not dirty. Just load the new stuff in.
+                if (!cache.get(index).dirty) { // Not dirty. Just load the new stuff in.
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     cache.get(index).tag = tag;
                     cache.get(index).dirty = false;
@@ -262,7 +261,7 @@ public final class CacheSimulator {
                 numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
             } else { // Miss!
                 numStoreMisses++;
-                if (!slot.dirty) { // not dirty
+                if (!cache.get(index).dirty) { // not dirty
                     // Just read in the new index and tag from
                     // memory and write this new data.
                     // First, fetch the correct slot from memory
