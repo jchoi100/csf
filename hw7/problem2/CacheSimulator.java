@@ -34,6 +34,11 @@ public final class CacheSimulator {
     	// args[5]: least-recently-used (1) or FIFO (0) evictions
     	// args[6]: input trace file
         Scanner traceScanner = new Scanner(args[6]);
+
+
+
+
+        
         traceScanner.close();    	
     }
 
@@ -51,20 +56,20 @@ public final class CacheSimulator {
      * Prints the result of prediction simulation on stdout.
      */
     private static void printRes() {
-        double goodPerc = 0;
-        double badPerc = 0;
-        if (numLines != 0) {
-            goodPerc = (correctPredictions / numLines) * PERCENTAGE;
-            badPerc = (wrongPredictions / numLines) * PERCENTAGE;
-        }
-        System.out.println("Total " + (long) numLines);
-        System.out.println("Good " + (long) correctPredictions);
-        System.out.println("Bad " + (long) wrongPredictions);
-        System.out.print("Good% ");
-        System.out.printf("%.2f\n", goodPerc);
-        System.out.print("Bad% ");
-        System.out.printf("%.2f\n", badPerc);
-        System.out.println("Size " + (long) size);
+        // double goodPerc = 0;
+        // double badPerc = 0;
+        // if (numLines != 0) {
+        //     goodPerc = (correctPredictions / numLines) * PERCENTAGE;
+        //     badPerc = (wrongPredictions / numLines) * PERCENTAGE;
+        // }
+        // System.out.println("Total " + (long) numLines);
+        // System.out.println("Good " + (long) correctPredictions);
+        // System.out.println("Bad " + (long) wrongPredictions);
+        // System.out.print("Good% ");
+        // System.out.printf("%.2f\n", goodPerc);
+        // System.out.print("Bad% ");
+        // System.out.printf("%.2f\n", badPerc);
+        // System.out.println("Size " + (long) size);
     }
 
     private static boolean allInputValid(String[] args) {
