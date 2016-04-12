@@ -172,7 +172,7 @@ public final class CacheSimulator {
                     // Not dirty. Just load the new stuff in.
                     CacheSlot toAdd = new CacheSlot(index, tag, 0);
                     cache.remove(index);
-                    cache.put(toAdd);
+                    cache.put(index, toAdd);
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                 } else {
@@ -183,7 +183,7 @@ public final class CacheSimulator {
                     // Change the tag and valid bit.
                     CacheSlot toAdd = new CacheSlot(index, tag, 0);
                     cache.remove(index);
-                    cache.put(toAdd);
+                    cache.put(index, toAdd);
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                 }
@@ -224,7 +224,7 @@ public final class CacheSimulator {
                     // First, fetch the correct slot from memory
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     cache.remove(index);
-                    cache.put(toAdd);
+                    cache.put(index, toAdd);
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                     // Write new data to the thing in cache.
                 } else { // slot is dirty
@@ -235,7 +235,7 @@ public final class CacheSimulator {
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     // Second, read the correct block from memory.
                     cache.remove(index);
-                    cache.put(toAdd);
+                    cache.put(index, toAdd);
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                     // Third, write the new stuff in cache.
