@@ -19,6 +19,26 @@ import java.io.FileNotFoundException;
  */
 public final class CacheSimulator {
 
+    private static final int CACHE_LS_CYCLE = 1;
+
+    private static final int MEMORY_LS_CYCLE = 100;
+
+    private static final int SIXTEEN = 16;
+
+    private static int numLoads = 0;
+
+    private static int numLoadHits = 0;
+
+    private static int numLoadMisses = 0;
+
+    private static int numStores = 0;
+
+    private static int numStoreHits = 0;
+
+    private static int numStoreMisses = 0;
+
+    private static int numCycles = 0;
+
     /**
      * Dummy constructor.
      */
@@ -34,11 +54,47 @@ public final class CacheSimulator {
     	// args[4]: write-through (1) or write-back (0)
     	// args[5]: least-recently-used (1) or FIFO (0) evictions
     	// args[6]: input trace file
+
+        // 1. A cache with n sets of 1 block each is essentially direct-mapped.
+        // 2. A cache with 1 set of n blocks is essentially fully associative.
+        // 3. A cache with n sets of m blocks is essentially m-way set-associative. 
+
+        // Let's first write the program for case 1 --> should be easiest
+
+        int numSets = Integer.parseInt(args[0]);
+        int blocksPerSet = Integer.parseInt(args[1]);
+        int bytesPerBlock = Integer.parseInt(args[2]);
+        int writeAllocate = Integer.parseInt(args[3]);
+        int writeThrough = Integer.parseInt(args[4]);
+        int lru = Integer.parseInt(args[5]);
         Scanner traceScanner = new Scanner(args[6]);
 
+        long cacheSize = numSets * blocksPerSet * bytesPerBlock;
+
+        while (traceScanner.hasNext()) {
+            String oneLine = traceScanner.nextLine();
+            Scanner lineScanner = new Scanner(oneLine);
+            String type = "";
+            String address = "";
+            String thirdCol = "";
+            int addressInt = 0;
+
+            try {
+                type = lineScanner.next().trim();
+                address = lineScanner.next().trim().substring(2);
+                thirdCol = lineScanner.next().trim();
+                addressInt = Integer.parseInt(address, SIXTEEN);
+            } catch (NoSuchElementException nse) {
+                System.err.println("Wrong number of fields in trace file!");
+                System.exit(1);
+            } catch (NumberFormatException nfe) {
+                System.err.println("Wrong address format!");
+                System.exit(1);
+            }
 
 
 
+        }
 
         traceScanner.close();    	
     }
@@ -92,11 +148,7 @@ public final class CacheSimulator {
     	} catch (NumberFormatException nfe) {
     		System.err.println("Input number format error!");
     		System.exit(1);
-    	}/* catch (FileNotFoundException fnfe) {
-     		System.err.println("Input file not found!");
-    		System.exit(1);   		
-		}*/
-
+    	}
     	
     	boolean numSetsPowTwo = isTwosPower(numSets);
     	boolean numBlocksPowTwo = isTwosPower(blocksPerSet);
@@ -110,13 +162,13 @@ public final class CacheSimulator {
     	// If the configuration is set for a direct mapped cache, but the 
     	// user entered lru or FIFO, just ignore.
 
-        System.out.println("numSetsPowTwo: " + numSetsPowTwo);
-        System.out.println("numBlocksPowTwo: " + numBlocksPowTwo);
-        System.out.println("numBytesPowTwo: " + numBytesPowTwo);
-        System.out.println("writeAllocateValid: " + writeAllocateValid);
-        System.out.println("writeThroughValid: " + writeThroughValid);
-        System.out.println("!noWriteAllocateAndWriteBack: " + !noWriteAllocateAndWriteBack);
-        System.out.println("lruFIFOValid: " + lruFIFOValid);
+        // System.out.println("numSetsPowTwo: " + numSetsPowTwo);
+        // System.out.println("numBlocksPowTwo: " + numBlocksPowTwo);
+        // System.out.println("numBytesPowTwo: " + numBytesPowTwo);
+        // System.out.println("writeAllocateValid: " + writeAllocateValid);
+        // System.out.println("writeThroughValid: " + writeThroughValid);
+        // System.out.println("!noWriteAllocateAndWriteBack: " + !noWriteAllocateAndWriteBack);
+        // System.out.println("lruFIFOValid: " + lruFIFOValid);
 
 
 
