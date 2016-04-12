@@ -13,6 +13,7 @@ import java.util.NoSuchElementException;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashMap;
 
 /**
  * CacheSimulator class.
@@ -22,14 +23,17 @@ import java.io.IOException;
 public final class CacheSimulator {
 
     /** Number of cycels needed to load/save with cache. */
-    private static final int CACHE_LS_CYCLE = 1;
+    private static final int CACHE_CYCLE = 1;
 
     /** Number of cycles needed to load/save with memory. */
-    private static final int MEMORY_LS_CYCLE = 100;
+    private static final int MEMORY_CYCLE = 100;
 
     /** Sixteen. */
     private static final int SIXTEEN = 16;
 
+    /** Thirty two. */
+    private static final int THIRTYTWO = 32;
+    
     /** Three. */
     private static final int THREE = 3;
 
@@ -66,6 +70,10 @@ public final class CacheSimulator {
     /** Total number of cycles. */
     private static int numCycles = 0;
 
+    /** Our cache. */
+    private static HashMap<Long, CacheSlot> cache =
+            new HashMap<>();;
+
     /**
      * Dummy constructor.
      */
@@ -75,34 +83,16 @@ public final class CacheSimulator {
 
     /**
      * Executes simulation.
+     * 1. A cache with n sets of 1 block each is essentially direct-mapped.
+     * 2. A cache with 1 set of n blocks is essentially fully associative.
+     * 3. Cache with n sets of m blocks is essentially m-way set-associative
      * @param args The input arguments
      * @throws IOException if file cannot be opened.
      */
     private static void executeSimulation(String[] args) throws IOException {
-        // args[0]: number of sets in the cache (a positive power-of-2)
-        // args[1]: number of blocks in each set (a positive power-of-2)
-        // args[2]: number of bytes in each block (a positive powof2, atleast 4)
-        // args[3]: write-allocate (1) or not (0)
-        // args[4]: write-through (1) or write-back (0)
-        // args[5]: least-recently-used (1) or FIFO (0) evictions
-        // args[6]: input trace file
-
-        // 1. A cache with n sets of 1 block each is essentially direct-mapped.
-        // 2. A cache with 1 set of n blocks is essentially fully associative.
-        // 3. Cache with n sets of m blocks is essentially m-way set-associative
-
         // Let's first write the program for case 1 --> should be easiest
-
-        BufferedReader br = null;
-        File file = null;
-
-        try {
-            file = new File(args[SIX]);
-            br = new BufferedReader(new FileReader(file));
-        } catch (IOException ioe) {
-            System.err.println("File read error!");
-            System.exit(1);
-        }
+        File file = new File(args[SIX]);
+        BufferedReader br = new BufferedReader(new FileReader(file));
 
         int numSets = Integer.parseInt(args[0]);
         int blocksPerSet = Integer.parseInt(args[1]);
@@ -113,6 +103,10 @@ public final class CacheSimulator {
         long cacheSize = numSets * blocksPerSet * bytesPerBlock;
         String oneLine = "";
 
+        //Number of bits to take from the address to index to cache.
+        int indexLength = (int) (Math.log(numSets) / Math.log(2));
+        int tagLength = THIRTYTWO - indexLength;
+
         while ((oneLine = br.readLine()) != null) {
             Scanner lineScanner = new Scanner(oneLine);
             String type = "";
@@ -120,6 +114,7 @@ public final class CacheSimulator {
             String thirdCol = "";
             long addressLong = 0;
 
+            // Try parsing all the information.
             try {
                 type = lineScanner.next().trim();
                 address = lineScanner.next().trim().substring(2);
@@ -133,18 +128,112 @@ public final class CacheSimulator {
                 System.exit(1);
             }
 
-            // Now, we have all the values we want.
+            // Set mask for getting index.
+            long mask = (1 << indexLength) - 1;
+            long index = addressLong & mask;
 
-            //Check for type.
+            // Flip mask bits to get mask for getting tag.
+            mask = ~mask;
+            long tag = (addressLong & mask);
+            tag >>= indexLength;
 
+            // Now, we have both the index and tag.
 
+            // Do the actual simulation.
+            if (type.equalsIgnoreCase("l")) {
+                numLoads++;
+                if (cache.containsKey(index)) {
+                    CacheSlot slot = cache.get(index);
+                    if (slot.valid && slot.tag == tag) { // hit!
+                        numLoadHits++;
+                        numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                    } else { // The tag doesn't match or invalid slot!
+                        numLoadMisses++;
+                        if (!slot.dirty) {
+                            // Not dirty. Just load the new stuff in.
+                            cache.get(index).tag = tag;
+                            cache.get(index).valid = true;
+                            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                        } else {
+                            // Need to write the dirty data to memory.
+                            // But we don't have data. Just pretend.
+                            // Now, load the new memory contents in cache.
+                            // Change the tag and valid bit.
+                            cache.get(index).tag = tag;
+                            cache.get(index).valid = true;
+                            cache.get(index).dirty = false;
+                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                        }
+                    }
+                } else { // No cache for the index whatsoever!
+                    numLoadMisses++;
+                    // Need to load data from memory from scratch.
+                    // Need to insert result into cache.
+                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                    CacheSlot toAdd = new CacheSlot(index, true, tag, 0);
+                    cache.put(index, toAdd);
+                }
+            } else if (type.equalsIgnoreCase("s")) { // Store case.
+                numStores++;
+                if (cache.containsKey(index)) {
+                    CacheSlot slot = cache.get(index);
+                    if (slot.valid && slot.tag == tag) {
+                        numStoreHits++;
+                    } else { // Miss!
+                        numStoreMisses++;
+                        if (!slot.dirty) { // not dirty
+                            // Just read in the new index, tag, and from
+                            // memory and write this new data.
 
+                            // First, fetch the correct slot from memory
+                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                            cache.get(index).tag = tag;
+                            cache.get(index).valid = true;
 
+                            // Write new data to the thing in cache.
+                            cache.get(index).dirty = true;
+                            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
 
+                        } else { // slot is dirty
+                            // Write this guy to memory first, and then
+                            // read block for our address, and then
+                            // write the new data
+
+                            // First, write the dirty block to memory.
+                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+
+                            // Second, read the correct block from memory.
+                            cache.get(index).tag = tag;
+                            cache.get(index).valid = true;
+                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+
+                            // Third, write the new stuff in cache.
+                            cache.get(index).dirty = true;
+                            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                        }
+                    }
+                } else { // Cache has nothing corresponding to the given index.
+                    numStoreMisses++;
+
+                    // First, read from memory the correct block.
+                    CacheSlot toAdd = new CacheSlot(index, true, tag, 0);
+                    cache.put(index, toAdd);
+                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+
+                    // Second, write this to cache.
+                    cache.get(index).dirty = true;
+                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                }
+            } else {
+                //error case.
+                System.err.println("Wrong command type: l or s!");
+                System.exit(1);
+            }
             lineScanner.close();
-
         }
-
         br.close();
     }
 
@@ -152,20 +241,14 @@ public final class CacheSimulator {
      * Prints the result of prediction simulation on stdout.
      */
     private static void printRes() {
-        // double goodPerc = 0;
-        // double badPerc = 0;
-        // if (numLines != 0) {
-        //     goodPerc = (correctPredictions / numLines) * PERCENTAGE;
-        //     badPerc = (wrongPredictions / numLines) * PERCENTAGE;
-        // }
-        // System.out.println("Total " + (long) numLines);
-        // System.out.println("Good " + (long) correctPredictions);
-        // System.out.println("Bad " + (long) wrongPredictions);
-        // System.out.print("Good% ");
-        // System.out.printf("%.2f\n", goodPerc);
-        // System.out.print("Bad% ");
-        // System.out.printf("%.2f\n", badPerc);
-        // System.out.println("Size " + (long) size);
+         System.out.println("Total loads: " + numLoads);
+         System.out.println("Total stores: " + numStores);
+         System.out.println("Load hits: " + numLoadHits);
+         System.out.println("Load misses: " + numLoadMisses);
+         System.out.println("Store hits: " + numStoreHits);
+         System.out.println("Store misses: " + numStoreMisses);
+         System.out.println("Total cycles: " + numCycles);
+
     }
 
     /******************************************************************/
@@ -246,7 +329,7 @@ public final class CacheSimulator {
      */
     private static boolean secondThirdCheck(int bytesPerBlock,
                                             int writeAllocate) {
-        return isTwosPower(bytesPerBlock) && bytesPerBlock >= 4
+        return isTwosPower(bytesPerBlock) && bytesPerBlock >= FOUR
                 && (writeAllocate == 1 || writeAllocate == 0);
     }
 
@@ -299,9 +382,33 @@ public final class CacheSimulator {
 
         if (allInputValid(args) && fileValid(args[SIX])) {
             executeSimulation(args);
+            printRes();
         } else {
             System.err.println("Invalid input!");
             System.exit(1);
+        }
+    }
+
+    private static class CacheSlot {
+        private long index;
+        private boolean valid;
+        private boolean dirty;
+        private long tag;
+        private long data; //???
+
+        /**
+         * Constructor for the CacheSlot class.
+         * @param index
+         * @param valid
+         * @param tag
+         * @param data
+         */
+        CacheSlot(long index, boolean valid, long tag, long data) {
+            this.index = index;
+            this.dirty = false;
+            this.valid = valid;
+            this.tag = tag;
+            this.data = data;
         }
     }
 }
