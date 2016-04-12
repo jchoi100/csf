@@ -110,8 +110,16 @@ public final class CacheSimulator {
     	// If the configuration is set for a direct mapped cache, but the 
     	// user entered lru or FIFO, just ignore.
 
-	System.out.println("numSetsPowTwo: " + numSetsPowTwo);
-	
+        System.out.println("numSetsPowTwo: " + numSetsPowTwo);
+        System.out.println("numBlocksPowTwo: " + numBlocksPowTwo);
+        System.out.println("numBytesPowTwo: " + numBytesPowTwo);
+        System.out.println("writeAllocateValid: " + writeAllocateValid);
+        System.out.println("writeThroughValid: " + writeThroughValid);
+        System.out.println("!writeAllocateAndWriteBack: " + !writeAllocateAndWriteBack);
+        System.out.println("lruFIFOValid: " + lruFIFOValid);
+
+
+
     	if (numSetsPowTwo && numBlocksPowTwo && numBytesPowTwo
     		&& writeAllocateValid && writeThroughValid 
     		&& !writeAllocateAndWriteBack && lruFIFOValid) {
@@ -138,17 +146,17 @@ public final class CacheSimulator {
     	// args[4]: write-through (1) or write-back (0)
     	// args[5]: least-recently-used (1) or FIFO (0) evictions
     	// args[6]: input trace file
-	
+    
         if (args.length != 7) {
             System.err.println("Wrong number of arguments!");
             System.exit(1);
         }
 
         if (allInputValid(args)) {
-        	executeSimulation(args);
+            executeSimulation(args);
         } else {
-        	System.err.println("Invalid input!");
-        	System.exit(1);
+            System.err.println("Invalid input!");
+            System.exit(1);
         }
     }
 }
