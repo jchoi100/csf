@@ -79,6 +79,8 @@ public final class CacheSimulator {
             String thirdCol = "";
             int addressInt = 0;
 
+	    System.out.println(oneLine);
+	    
             try {
                 type = lineScanner.next().trim();
                 address = lineScanner.next().trim().substring(2);
