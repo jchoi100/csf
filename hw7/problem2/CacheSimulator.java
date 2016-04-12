@@ -215,8 +215,9 @@ public final class CacheSimulator {
             } else { // The tag doesn't match!
                 numLoadMisses++;
                 if (!slot.dirty) { // Not dirty. Just load the new stuff in.
-                    cache.get(index).tag = tag;
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                    cache.get(index).tag = tag;
+                    cache.get(index).dirty = false;
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                 } else { //Dirty.
                     // Need to write the dirty data to memory.
@@ -224,8 +225,9 @@ public final class CacheSimulator {
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     // Now, load the new memory contents in cache.
                     // Change the tag and valid bit.
-                    cache.get(index).tag = tag;
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                    cache.get(index).tag = tag;
+                    cache.get(index).dirty = false;
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                 }
             }
@@ -235,6 +237,7 @@ public final class CacheSimulator {
             // Need to insert result into cache.
             numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
             CacheSlot toAdd = new CacheSlot(index, tag, 0);
+            toAdd.dirty = false;
             cache.put(index, toAdd);
             // Then return result in cache to CPU.
             numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
@@ -248,12 +251,12 @@ public final class CacheSimulator {
      * @param bytesPerBlock Bytes per block.
      */
     private static void storeExecute1(long index, long tag, int bytesPerBlock) {
+        // Write-back with write-allocate
         // Use dirty bit.
         // Don't ignore write miss.
         numStores++;
         if (cache.containsKey(index)) { // Something is in cache.
-            CacheSlot slot = cache.get(index);
-            if (slot.tag == tag) { // Hit!
+            if (cache.get(index).tag == tag) { // Hit!
                 numStoreHits++;
                 cache.get(index).dirty = true;
                 numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
@@ -265,8 +268,8 @@ public final class CacheSimulator {
                     // First, fetch the correct slot from memory
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     cache.get(index).tag = tag;
-                    cache.get(index).dirty = true;
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                    cache.get(index).dirty = true;
                     // Write new data to the thing in cache.
                 } else { // slot is dirty
                     // Write this guy to memory first, and then
@@ -275,10 +278,10 @@ public final class CacheSimulator {
                     // First, write the dirty block to memory.
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     // Second, read the correct block from memory.
-                    cache.get(index).tag = tag;
-                    cache.get(index).dirty = true;
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                    cache.get(index).tag = tag;
                     numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                    cache.get(index).dirty = true;
                     // Third, write the new stuff in cache.
                 }
             }
@@ -290,10 +293,8 @@ public final class CacheSimulator {
             cache.put(index, toAdd);
             numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
             numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
-            // Second, write this to cache.
         }
     }
-
 
     /**
      * Execution for store case.
@@ -302,6 +303,7 @@ public final class CacheSimulator {
      * @param bytesPerBlock Bytes per block.
      */
     private static void storeExecute2(long index, long tag, int bytesPerBlock) {
+        // Write through with write allocate.
         // Don't use dirty bit --> write to both cache and RAM simultaneously.
         // Don't ignore write miss.
         numStores++;
@@ -339,9 +341,28 @@ public final class CacheSimulator {
      * @param bytesPerBlock Bytes per block.
      */
     private static void storeExecute3(long index, long tag, int bytesPerBlock) {
+        // Write through with no write allocate.
         // Don't use dirty bit --> write to both cache and RAM simultaneously.
         // Ignore write miss.
- 
+        // data at the missed-write location is not loaded to cache,
+        // and is written directly to the backing store.
+        numStores++;
+        if (cache.containsKey(index)) { // Something is in cache.
+            CacheSlot slot = cache.get(index);
+            if (slot.tag == tag) { // Hit!
+                numStoreHits++;
+                cache.get(index).dirty = true;
+                numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+            } else { // Miss!
+                numStoreMisses++;
+                // Then, write directly to memory
+                numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+            }
+        } else { // Miss: Cache has nothing corresponding to the given index.
+            numStoreMisses++;
+            // Write directly to memory.
+            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+        } 
     }
 
     // Need to do: write storeExecute3.
