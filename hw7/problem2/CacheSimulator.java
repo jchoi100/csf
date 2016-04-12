@@ -70,6 +70,16 @@ public final class CacheSimulator {
     /** Total number of cycles. */
     private static int numCycles = 0;
 
+    static int count = 0;
+
+    static long firstIndex = 0;
+
+    static long firstTag = 0;
+
+    static long secondIndex = 0;
+
+    static long secondTag = 0;
+
     /** Our cache. */
     private static HashMap<Long, CacheSlot> cache =
             new HashMap<>();;
@@ -106,9 +116,6 @@ public final class CacheSimulator {
         //Number of bits to take from the address to index to cache.
         int indexLength = (int) (Math.log(numSets) / Math.log(2));
         int tagLength = THIRTYTWO - indexLength;
-
-        System.out.println("indexLen: " + indexLength);
-        System.out.println("tagLen: " + tagLength);
         
         while ((oneLine = br.readLine()) != null) {
             Scanner lineScanner = new Scanner(oneLine);
@@ -139,6 +146,15 @@ public final class CacheSimulator {
             mask = ~mask;
             long tag = (addressLong & mask);
             tag >>= indexLength;
+
+            if (count == 0) {
+                firstIndex = index;
+                firstTag = tag;
+            } else if (count == 1) {
+                secondIndex = index;
+                secondTag = tag;
+            }
+            count++;
 
             // Now, we have both the index and tag.
 
@@ -261,7 +277,6 @@ public final class CacheSimulator {
          System.out.println("Store hits: " + numStoreHits);
          System.out.println("Store misses: " + numStoreMisses);
          System.out.println("Total cycles: " + numCycles);
-
     }
 
     /******************************************************************/
@@ -395,7 +410,12 @@ public final class CacheSimulator {
 
         if (allInputValid(args) && fileValid(args[SIX])) {
             executeSimulation(args);
-            printRes();
+            // printRes();
+            System.out.println("First tag: " + firstTag);
+            System.out.println("First index: " + firstIndex);
+            System.out.println("Second tag: " + secondTag);
+            System.out.println("Second index: " + secondIndex);
+
         } else {
             System.err.println("Invalid input!");
             System.exit(1);
