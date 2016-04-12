@@ -147,17 +147,19 @@ public final class CacheSimulator {
                     if (slot.valid && slot.tag == tag) { // hit!
                         numLoadHits++;
                         numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
-                    } else { // The tag doesn't match or invalid slot!
+                    } else { // The tag doesn't match!
                         numLoadMisses++;
                         if (!slot.dirty) {
                             // Not dirty. Just load the new stuff in.
                             cache.get(index).tag = tag;
                             cache.get(index).valid = true;
+                            cache.get(index).dirty = false;
                             numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                             numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                         } else {
                             // Need to write the dirty data to memory.
                             // But we don't have data. Just pretend.
+                            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                             // Now, load the new memory contents in cache.
                             // Change the tag and valid bit.
                             cache.get(index).tag = tag;
@@ -171,61 +173,50 @@ public final class CacheSimulator {
                     numLoadMisses++;
                     // Need to load data from memory from scratch.
                     // Need to insert result into cache.
-                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                     CacheSlot toAdd = new CacheSlot(index, true, tag, 0);
                     cache.put(index, toAdd);
+                    // Then return result in cache to CPU.
+                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                 }
             } else if (type.equalsIgnoreCase("s")) { // Store case.
                 numStores++;
-                if (cache.containsKey(index)) {
+                if (cache.containsKey(index)) { // Something is in cache.
                     CacheSlot slot = cache.get(index);
-                    if (slot.valid && slot.tag == tag) {
+                    if (slot.valid && slot.tag == tag) { // What we wanted.
                         numStoreHits++;
+                        /*******DOES THIS SPEND ANY CYLCES??*********/
                     } else { // Miss!
                         numStoreMisses++;
+                        cache.get(index).valid = true;
+                        cache.get(index).dirty = true;
                         if (!slot.dirty) { // not dirty
-                            // Just read in the new index, tag, and from
+                            // Just read in the new index and tag from
                             // memory and write this new data.
-
                             // First, fetch the correct slot from memory
                             numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
                             cache.get(index).tag = tag;
-                            cache.get(index).valid = true;
-
                             // Write new data to the thing in cache.
-                            cache.get(index).dirty = true;
-                            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
-
                         } else { // slot is dirty
                             // Write this guy to memory first, and then
                             // read block for our address, and then
-                            // write the new data
-
+                            // write the new data.
                             // First, write the dirty block to memory.
                             numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-
                             // Second, read the correct block from memory.
                             cache.get(index).tag = tag;
-                            cache.get(index).valid = true;
                             numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-
                             // Third, write the new stuff in cache.
-                            cache.get(index).dirty = true;
-                            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                         }
                     }
                 } else { // Cache has nothing corresponding to the given index.
                     numStoreMisses++;
-
                     // First, read from memory the correct block.
                     CacheSlot toAdd = new CacheSlot(index, true, tag, 0);
                     cache.put(index, toAdd);
                     numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-
                     // Second, write this to cache.
                     cache.get(index).dirty = true;
-                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
                 }
             } else {
                 //error case.
