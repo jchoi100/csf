@@ -9,6 +9,7 @@
 
 import java.util.Scanner;
 import java.util.HashMap;
+import java.io.BufferedReader;
 import java.util.NoSuchElementException;
 import java.io.FileNotFoundException;
 import java.io.File;
@@ -49,7 +50,7 @@ public final class CacheSimulator {
 
     }
 
-    private static void executeSimulation(String[] args) {
+    private static void executeSimulation(String[] args) throws IOException {
     	// args[0]: number of sets in the cache (a positive power-of-2)
     	// args[1]: number of blocks in each set (a positive power-of-2)
     	// args[2]: number of bytes in each block (a positive power-of-2, at least 4)
@@ -64,6 +65,17 @@ public final class CacheSimulator {
 
         // Let's first write the program for case 1 --> should be easiest
 
+	BufferedReader br = null;
+	File file = null;
+
+	try {
+	    file = new File(args[6]);
+	    br = new BufferedReader(new FileReader(file));
+	} catch (IOException ioe) {
+	    System.err.println("File read error!");
+	    System.exit(1);
+	}
+	
         int numSets = Integer.parseInt(args[0]);
         int blocksPerSet = Integer.parseInt(args[1]);
         int bytesPerBlock = Integer.parseInt(args[2]);
@@ -71,7 +83,6 @@ public final class CacheSimulator {
         int writeThrough = Integer.parseInt(args[4]);
         int lru = Integer.parseInt(args[5]);
         long cacheSize = numSets * blocksPerSet * bytesPerBlock;
-        BufferedReader br = new BufferedReader(new FileReader(INPUT_FILE));
         String oneLine = "";
 
         while ((oneLine = br.readLine()) != null) {
@@ -79,17 +90,13 @@ public final class CacheSimulator {
             String type = "";
             String address = "";
             String thirdCol = "";
-            int addressInt = 0;
-
-	    System.out.println(oneLine);
+            long addressLong = 0;
 	    
             try {
                 type = lineScanner.next().trim();
                 address = lineScanner.next().trim().substring(2);
                 thirdCol = lineScanner.next().trim();
-                System.out.println(type);
-                System.out.println(address);
-                addressInt = Integer.parseInt(address, SIXTEEN);
+                addressLong = Long.parseLong(address, SIXTEEN);
             } catch (NoSuchElementException nse) {
                 System.err.println("Wrong number of fields in trace file!");
                 System.exit(1);
@@ -196,7 +203,7 @@ public final class CacheSimulator {
      * Main driver for this program.
      * @param args Input arguments for this program.
      */
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws IOException {
 
     	// Sample command line input:
     	// java CacheSimulator 256 4 16 1 0 1 gcc.trace
