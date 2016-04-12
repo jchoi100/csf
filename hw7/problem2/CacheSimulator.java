@@ -300,7 +300,7 @@ public final class CacheSimulator {
         numStores++;
         if (cache.containsKey(index)) { // Something is in cache.
             ArrayList<CacheSlot> bucketList = cache.get(index);
-            int position - bucketListContainsSlot(bucketList, tag);           
+            int position = bucketListContainsSlot(bucketList, tag);           
             if (position != -1) { // Hit!
                 numStoreHits++;
                 bucketList.get(position).dirty = true;
