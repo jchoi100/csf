@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.ArrayList;
 
 /**
- * 600.233 Computer System Fundamentals
+ * 600.233 Computer System Fundamentals.
  * Name: Joon Hyuck Choi, Neha Kulkarni
  * Assignment 7 Problem 2
  * JHED: jchoi100, nkulkar5
@@ -68,7 +68,7 @@ public final class CacheSimulator {
     /** Boolienized input args 3, 4, 5 given as 1 or 0. */
     private boolean writeThrough, writeAllocate, lru;
 
-    /** Input file name: args 6 */
+    /** Input file name: args 6. */
     private String inputFile;
 
     /** Our cache. */
@@ -78,8 +78,6 @@ public final class CacheSimulator {
      * Class to contain info about a cache slot.
      */
     private class CacheSlot {
-        /** Index for the address of this slot. */
-        private long index;
 
         /** Tag for this address. */
         private long tag;
@@ -92,8 +90,7 @@ public final class CacheSimulator {
          * @param index index of the address.
          * @param tag tag of the address.
          */
-        CacheSlot(long i, long t) {
-            this.index = i;
+        CacheSlot(long t) {
             this.dirty = false;
             this.tag = t;
         }
@@ -242,7 +239,7 @@ public final class CacheSimulator {
                 if (bucketList.size() < this.blocksPerSet) {
                     // Just add this new guy to the front
                     // Load contents to cache from memory.
-                    bucketList.add(0, new CacheSlot(index, tag));
+                    bucketList.add(0, new CacheSlot(tag));
                     this.numCycles += MEMORY_CYCLE
                                             * (this.bytesPerBlock / FOUR);
                 } else {
@@ -261,7 +258,7 @@ public final class CacheSimulator {
                                             * (this.bytesPerBlock / FOUR);
                     }
                     bucketList.remove(bucketList.size() - 1);
-                    bucketList.add(0, new CacheSlot(index, tag));
+                    bucketList.add(0, new CacheSlot(tag));
                 }
             }
         } else { // No cache for the index whatsoever!
@@ -271,7 +268,7 @@ public final class CacheSimulator {
             ArrayList<CacheSlot> bucket = new ArrayList<>();
             // Need to insert result into cache.
             this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
-            CacheSlot toAdd = new CacheSlot(index, tag);
+            CacheSlot toAdd = new CacheSlot(tag);
             toAdd.dirty = false;
             bucket.add(toAdd);
             this.cache.put(index, bucket);
@@ -282,7 +279,7 @@ public final class CacheSimulator {
     }
 
     /**
-     * Execution for store case: Write back, write allocate
+     * Execution for store case: Write back, write allocate.
      * @param index index into cache.
      * @param tag tag in cache.
      */
@@ -309,7 +306,7 @@ public final class CacheSimulator {
                 // If not, load from memory this data
                 // to the front and change it and mark dirty.
                 // If so, evict one block and do the same.
-                CacheSlot toAdd = new CacheSlot(index, tag);
+                CacheSlot toAdd = new CacheSlot(tag);
                 toAdd.dirty = true;
                 if (bucketList.size() < this.blocksPerSet) {
                     bucketList.add(0, toAdd);
@@ -337,7 +334,7 @@ public final class CacheSimulator {
                     bucketList.add(0, toAdd);
                 }
             }
-        } else { 
+        } else {
             // Miss: Cache has nothing corresponding to the given index.
             this.numStoreMisses++;
             // First, read from memory the correct block.
@@ -345,7 +342,7 @@ public final class CacheSimulator {
             ArrayList<CacheSlot> bucket = new ArrayList<>();
             // Fetch data from memory into cache.
             this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
-            CacheSlot toAdd = new CacheSlot(index, tag);
+            CacheSlot toAdd = new CacheSlot(tag);
             toAdd.dirty = true;
             bucket.add(toAdd);
             this.cache.put(index, bucket);
@@ -356,7 +353,7 @@ public final class CacheSimulator {
     }
 
     /**
-     * Execution for store case: Write through, write allocate
+     * Execution for store case: Write through, write allocate.
      * @param index index into cache.
      * @param tag tag in cache.
      */
@@ -377,7 +374,7 @@ public final class CacheSimulator {
                 }
             } else { // Miss!
                 this.numStoreMisses++;
-                CacheSlot toAdd = new CacheSlot(index, tag);
+                CacheSlot toAdd = new CacheSlot(tag);
                 // If bucektlist full, evict the last one.
                 if (bucketList.size() >= this.blocksPerSet) {
                     bucketList.remove(bucketList.size() - 1);
@@ -392,7 +389,7 @@ public final class CacheSimulator {
             ArrayList<CacheSlot> bucket = new ArrayList<>();
             // First, read from memory the correct block.
             this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
-            CacheSlot toAdd = new CacheSlot(index, tag);
+            CacheSlot toAdd = new CacheSlot(tag);
             bucket.add(toAdd);
             this.cache.put(index, bucket);
         }
@@ -403,7 +400,7 @@ public final class CacheSimulator {
     }
 
     /**
-     * Execution for store case: Write through, no write allocate
+     * Execution for store case: Write through, no write allocate.
      * @param index index into cache.
      * @param tag tag in cache.
      */
@@ -479,11 +476,11 @@ public final class CacheSimulator {
             argc++;
             this.bytesPerBlock = Integer.parseInt(args[2]);
             argc++;
-            this.writeAllocate = this.stringToBool(args[THREE]);
+            this.writeAllocate = this.stringToBool(args[THREE], argc);
             argc++;
-            this.writeThrough = this.stringToBool(args[FOUR]);
+            this.writeThrough = this.stringToBool(args[FOUR], argc);
             argc++;
-            this.lru = this.stringToBool(args[FIVE]);
+            this.lru = this.stringToBool(args[FIVE], argc);
             argc++;
             this.inputFile = args[SIX];
         } catch (NumberFormatException nfe) {
@@ -511,15 +508,13 @@ public final class CacheSimulator {
      * @param s the argument to convert to boolean.
      * @return Boolean form of the input string.
      */
-    private boolean stringToBool(String s) {
+    private boolean stringToBool(String s, int argc) {
         if (s.equals("1")) {
             return true;
         } else if (s.equals("0")) {
             return false;
         } else {
-            System.err.println("Wrong number format for "
-                                + "writeAllocate, writeThrough, "
-                                + "and lru/FIFO!");
+            System.err.println("Input args[" + argc + "] should be 1 or 0!");
             System.exit(1);
             return false;
         }
