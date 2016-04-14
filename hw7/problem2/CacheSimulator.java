@@ -1,12 +1,3 @@
-/*
- * 600.233 Computer System Fundamentals
- * Name: Joon Hyuck Choi, Neha Kulkarni
- * Assignment 7
- * JHED: jchoi100, nkulkar5
- * email: jchoi100@jhu.edu / nkulkar5@jhu.edu
- * CacheSimulator.java
- */
-
 import java.util.Scanner;
 import java.io.BufferedReader;
 import java.util.NoSuchElementException;
@@ -17,9 +8,12 @@ import java.util.HashMap;
 import java.util.ArrayList;
 
 /**
- * CacheSimulator class.
- * @author Joon Hyuck Choi
- *
+ * 600.233 Computer System Fundamentals
+ * Name: Joon Hyuck Choi, Neha Kulkarni
+ * Assignment 7 Problem 2
+ * JHED: jchoi100, nkulkar5
+ * email: jchoi100@jhu.edu / nkulkar5@jhu.edu
+ * CacheSimulator.java
  */
 public final class CacheSimulator {
 
@@ -66,15 +60,15 @@ public final class CacheSimulator {
     private int numCycles;
 
     /** Offset and indexLength for parsing address. */
-    private int offset, numSets;
+    private int offset, indexLength;
 
-    /** Input arguments. */
-    private int blocksPerSet, bytesPerBlock, indexLength;
+    /** Input args 0, 1, 2. */
+    private int numSets, blocksPerSet, bytesPerBlock;
 
-    /** Boolienized form for the three input arguments given as numbers. */
+    /** Boolienized input args 3, 4, 5 given as 1 or 0. */
     private boolean writeThrough, writeAllocate, lru;
 
-    /** Input file name. */
+    /** Input file name: args 6 */
     private String inputFile;
 
     /** Our cache. */
@@ -84,9 +78,14 @@ public final class CacheSimulator {
      * Class to contain info about a cache slot.
      */
     private class CacheSlot {
+        /** Index for the address of this slot. */
         private long index;
-        private boolean dirty;
+
+        /** Tag for this address. */
         private long tag;
+
+        /** Dirty if edited. */
+        private boolean dirty;
 
         /**
          * Constructor for the CacheSlot class.
@@ -102,7 +101,7 @@ public final class CacheSimulator {
 
     /**
      * Constructor for the CacheSimulator class.
-     * Initializes member variables.
+     * Parses args and initializes member variables.
      * @param args Arguments given.
      */
     private CacheSimulator(String[] args) {
@@ -118,9 +117,10 @@ public final class CacheSimulator {
 
     /**
      * Executes simulation.
+     * Cases (per course website):
      * 1. A cache with n sets of 1 block each is essentially direct-mapped.
      * 2. A cache with 1 set of n blocks is essentially fully associative.
-     * 3. Cache with n sets of m blocks is essentially m-way set-associative
+     * 3. Cache with n sets of m blocks is essentially m-way set-associative.
      * @throws IOException if file cannot be opened.
      */
     private void executeSimulation() throws IOException {
@@ -144,6 +144,7 @@ public final class CacheSimulator {
                 System.err.println("Wrong address format!");
                 System.exit(1);
             }
+
             address = String.format("%32s",
                    Long.toBinaryString(Long.decode(address))).replace(' ', '0');
             int cutoff = address.length() - this.offset;
@@ -166,7 +167,7 @@ public final class CacheSimulator {
                     this.storeExecute3(index, tag);
                 }
             } else { // error case.
-                System.err.println("Wrong command type: l or s!");
+                System.err.println("Wrong cmd type: must be either l or s!");
                 System.exit(1);
             }
             lineScanner.close();
@@ -203,7 +204,7 @@ public final class CacheSimulator {
      * @return position of slot if tag match, -1 if not.
      */
     private int bucketListContainsSlot(ArrayList<CacheSlot> bucketList,
-                                                  long tag) {
+                                       long tag) {
         int position = -1;
         for (int i = 0; i < bucketList.size(); i++) {
             if (bucketList.get(i).tag == tag) {
@@ -281,8 +282,7 @@ public final class CacheSimulator {
     }
 
     /**
-     * Execution for store case.
-     * Write back, write allocate
+     * Execution for store case: Write back, write allocate
      * @param index index into cache.
      * @param tag tag in cache.
      */
@@ -315,10 +315,9 @@ public final class CacheSimulator {
                     bucketList.add(0, toAdd);
                     this.numCycles += MEMORY_CYCLE
                                         * (this.bytesPerBlock / FOUR);
-                    // Write to new guy in cache
+                    // Write to new guy in cache.
                 } else {
-                    // Need to evict something now.
-                    // In both LRU and FIFO, remove the last one.
+                    // In both LRU and FIFO, evict the last one.
                     if (!bucketList.get(bucketList.size() - 1).dirty) {
                         // Just evict without further action.
                         // Load new guy from memory
@@ -338,7 +337,8 @@ public final class CacheSimulator {
                     bucketList.add(0, toAdd);
                 }
             }
-        } else { // Miss: Cache has nothing corresponding to the given index.
+        } else { 
+            // Miss: Cache has nothing corresponding to the given index.
             this.numStoreMisses++;
             // First, read from memory the correct block.
             // First, create a new bucket to reside in cache.
@@ -351,13 +351,12 @@ public final class CacheSimulator {
             this.cache.put(index, bucket);
             // Write the result to thing in cache.
         }
-        // Write the result to thing in cache.
+        // For all cases above, write the result in cache.
         this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
     }
 
     /**
-     * Execution for store case.
-     * Write through, write allocate
+     * Execution for store case: Write through, write allocate
      * @param index index into cache.
      * @param tag tag in cache.
      */
@@ -404,8 +403,7 @@ public final class CacheSimulator {
     }
 
     /**
-     * Execution for store case.
-     * Write through, no write allocate
+     * Execution for store case: Write through, no write allocate
      * @param index index into cache.
      * @param tag tag in cache.
      */
@@ -473,16 +471,23 @@ public final class CacheSimulator {
      * @param args the input arguments.
      */
     private void parseArguments(String[] args) {
+        int argc = 0;
         try {
             this.numSets = Integer.parseInt(args[0]);
+            argc++;
             this.blocksPerSet = Integer.parseInt(args[1]);
+            argc++;
             this.bytesPerBlock = Integer.parseInt(args[2]);
+            argc++;
             this.writeAllocate = this.stringToBool(args[THREE]);
+            argc++;
             this.writeThrough = this.stringToBool(args[FOUR]);
+            argc++;
             this.lru = this.stringToBool(args[FIVE]);
+            argc++;
             this.inputFile = args[SIX];
         } catch (NumberFormatException nfe) {
-            System.err.println("Input arguments number format error!");
+            System.err.println("Input args[" + argc + "] should be a number!");
             System.exit(1);
         }
     }
