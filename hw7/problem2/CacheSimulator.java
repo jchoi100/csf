@@ -29,12 +29,6 @@ public final class CacheSimulator {
     /** Number of cycles needed to load/save with memory. */
     private static final int MEMORY_CYCLE = 100;
 
-    /** Sixteen. */
-    private static final int SIXTEEN = 16;
-
-    /** Thirty two. */
-    private static final int THIRTYTWO = 32;
-    
     /** Three. */
     private static final int THREE = 3;
 
@@ -51,35 +45,67 @@ public final class CacheSimulator {
     private static final int SEVEN = 7;
 
     /** Total number of loads. */
-    private static int numLoads = 0;
+    private int numLoads;
 
     /** Total number of load hits. */
-    private static int numLoadHits = 0;
+    private int numLoadHits;
 
     /** Total number of load misses. */
-    private static int numLoadMisses = 0;
+    private int numLoadMisses;
 
     /** Total number of stores. */
-    private static int numStores = 0;
+    private int numStores;
 
     /** Total number of store hits. */
-    private static int numStoreHits = 0;
+    private int numStoreHits;
 
     /** Total number of store misses. */
-    private static int numStoreMisses = 0;
+    private int numStoreMisses;
 
     /** Total number of cycles. */
-    private static int numCycles = 0;
+    private int numCycles;
+
+    private int offset, numSets, blocksPerSet, bytesPerBlock, indexLength;
+
+    private boolean writeThrough, writeAllocate, lru;
+
+    private String inputFile;
 
     /** Our cache. */
-    private static HashMap<Long, ArrayList<CacheSlot>> cache =
-            new HashMap<>();;
+    private HashMap<Long, ArrayList<CacheSlot>> cache = new HashMap<>();
 
     /**
-     * Dummy constructor.
+     * Class to contain info about a cache slot.
      */
-    private CacheSimulator() {
+    private class CacheSlot {
+        private long index;
+        private boolean dirty;
+        private long tag;
 
+        /**
+         * Constructor for the CacheSlot class.
+         * @param index
+         * @param tag
+         */
+        CacheSlot(long i, long t) {
+            this.index = i;
+            this.dirty = false;
+            this.tag = t;
+        }
+    }
+
+    /**
+     *
+     */
+    private CacheSimulator(String[] args) {
+        this.parseArguments(args);
+        this.offset = (int) (Math.log(this.bytesPerBlock) / Math.log(2));
+        this.numLoadHits = 0;
+        this.numLoadMisses = 0;
+        this.numStoreHits = 0;
+        this.numStoreMisses = 0;
+        this.numCycles = 0;
+        this.indexLength = (int) (Math.log(this.numSets) / Math.log(2));
     }
 
     /**
@@ -87,43 +113,23 @@ public final class CacheSimulator {
      * 1. A cache with n sets of 1 block each is essentially direct-mapped.
      * 2. A cache with 1 set of n blocks is essentially fully associative.
      * 3. Cache with n sets of m blocks is essentially m-way set-associative
-     * @param args The input arguments
      * @throws IOException if file cannot be opened.
      */
-    private static void executeSimulation(String[] args) throws IOException {
+    private void executeSimulation() throws IOException {
         // Let's first write the program for case 1 --> should be easiest
-        File file = new File(args[SIX]);
+        File file = new File(this.inputFile);
         BufferedReader br = new BufferedReader(new FileReader(file));
 
-        int numSets = Integer.parseInt(args[0]);
-        int blocksPerSet = Integer.parseInt(args[1]);
-        int bytesPerBlock = Integer.parseInt(args[2]);
-
-        int writeAllocate = Integer.parseInt(args[THREE]);
-        int writeThrough = Integer.parseInt(args[FOUR]);
-        int lru = Integer.parseInt(args[FIVE]);
-        
-        long cacheSize = numSets * blocksPerSet * bytesPerBlock;
         String oneLine = "";
-        
-        //Number of bits to take from the address to index to cache.
-        int indexLength = (int) (Math.log(numSets) / Math.log(2));
-        int tagLength = THIRTYTWO - indexLength;
-        
+
         while ((oneLine = br.readLine()) != null) {
             Scanner lineScanner = new Scanner(oneLine);
             String type = "";
             String address = "";
-            String thirdCol = "";
-            long addressLong = 0;
 
-            // Try parsing all the information.
             try {
                 type = lineScanner.next().trim();
                 address = lineScanner.next().trim();
-                // address = lineScanner.next().trim().substring(2);
-                thirdCol = lineScanner.next().trim();
-                // addressLong = Long.parseLong(address, SIXTEEN);
             } catch (NoSuchElementException nse) {
                 System.err.println("Wrong number of fields in trace file!");
                 System.exit(1);
@@ -131,96 +137,47 @@ public final class CacheSimulator {
                 System.err.println("Wrong address format!");
                 System.exit(1);
             }
-
-            // // Set mask for getting index.
-            // long mask = (1 << indexLength) - 1;
-            // long index = addressLong & mask;
-
-            int offset = (int) (Math.log(bytesPerBlock) / Math.log(2));
-
-
-            // // Flip mask bits to get mask for getting tag.
-            // mask = ~mask;
-            // long tag = (addressLong & mask);
-            // tag >>= indexLength;
-
-            // Convert hex address to binary string
             address = String.format("%32s",
-                Long.toBinaryString(Long.decode(address))).replace(' ', '0');
-            int cutoff = address.length() - offset;
+                   Long.toBinaryString(Long.decode(address))).replace(' ', '0');
+            int cutoff = address.length() - this.offset;
 
-            // Extract set number
-            int index = (indexLength == 0) ? 0 : Integer.parseInt(address.substring(
-                cutoff - indexLength, cutoff), 2);
-            // Extract tag
-            int tag = Integer.parseInt(address.substring(0, cutoff - indexLength), 2);
+            int index = this.getIndex(address, cutoff);
+            int tag = this.getTag(address, cutoff);
 
-
-            // Now, we have both the index and tag.
-
-            if (writeAllocate == 1 && writeThrough == 0) {
-                // Write back, write allocate
-                writeBackYesAllocate(type, index, tag, bytesPerBlock, numSets, blocksPerSet, lru);
-            } else if (writeAllocate == 1 && writeThrough == 1) {
-                // Write through, write allocate
-                writeThroughYesAllocate(type, index, tag, bytesPerBlock, numSets, blocksPerSet, lru);
-            } else { //writeAllocate == 0 && writeThrough == 1
-                // Write through, no write allocate
-                writeThroughNoAllocate(type, index, tag, bytesPerBlock, numSets, blocksPerSet, lru);
+            if (type.equalsIgnoreCase("l")) {
+                this.loadExecute(index, tag);
+            } else if (type.equalsIgnoreCase("s")) { // Store case.
+                // Now, we have both the index and tag.
+                if (this.writeAllocate && !this.writeThrough) {
+                    // Write back, write allocate
+                    this.storeExecute1(index, tag);
+                } else if (this.writeAllocate && this.writeThrough) {
+                    // Write through, write allocate
+                    this.storeExecute2(index, tag);
+                } else { //writeAllocate == 0 && writeThrough == 1
+                    // Write through, no write allocate
+                    this.storeExecute3(index, tag);
+                }
+            } else { // error case.
+                System.err.println("Wrong command type: l or s!");
+                System.exit(1);
             }
-
             lineScanner.close();
         }
         br.close();
     }
 
-    private static void writeBackYesAllocate(String type, long index, long tag,
-                                             int bytesPerBlock, int numSets,
-                                             int blocksPerSet, int lru) {
-        // Use dirty bit.
-        // Don't ignore write miss.
-        if (type.equalsIgnoreCase("l")) {
-            loadExecute(index, tag, bytesPerBlock, numSets, blocksPerSet, lru);
-        } else if (type.equalsIgnoreCase("s")) { // Store case.
-            storeExecute1(index, tag, bytesPerBlock, numSets, blocksPerSet, lru);
-        } else { // error case.
-            System.err.println("Wrong command type: l or s!");
-            System.exit(1);
-        }
+    private int getIndex(String address, int cutoff) {
+        return (this.indexLength == 0) ? 0 : Integer.parseInt(address.substring(
+            cutoff - this.indexLength, cutoff), 2);
     }
 
-    private static void writeThroughYesAllocate(String type, long index,
-                                                long tag, int bytesPerBlock,
-                                                int numSets, int blocksPerSet,
-                                                int lru) {
-        // Don't use dirty bit --> write to both cache and RAM simultaneously.
-        // Don't ignore write miss.
-        if (type.equalsIgnoreCase("l")) {
-            loadExecute(index, tag, bytesPerBlock, numSets, blocksPerSet, lru);
-        } else if (type.equalsIgnoreCase("s")) { // Store case.
-            storeExecute2(index, tag, bytesPerBlock, numSets, blocksPerSet, lru);
-        } else { // error case.
-            System.err.println("Wrong command type: l or s!");
-            System.exit(1);
-        }
+    private int getTag(String address, int cutoff) {
+        return Integer.parseInt(address.substring(0,
+                cutoff - this.indexLength), 2);
     }
 
-    private static void writeThroughNoAllocate(String type, long index, long tag,
-                                               int bytesPerBlock, int numSets,
-                                               int blocksPerSet, int lru) {
-        // Don't use dirty bit --> write to both cache and RAM simultaneously.
-        // Ignore write miss.
-        if (type.equalsIgnoreCase("l")) {
-            loadExecute(index, tag, bytesPerBlock, numSets, blocksPerSet, lru);
-        } else if (type.equalsIgnoreCase("s")) { // Store case.
-            storeExecute3(index, tag, bytesPerBlock, numSets, blocksPerSet, lru);
-        } else { // error case.
-            System.err.println("Wrong command type: l or s!");
-            System.exit(1);
-        }
-    }
-
-    private static int bucketListContainsSlot(ArrayList<CacheSlot> bucketList,
+    private int bucketListContainsSlot(ArrayList<CacheSlot> bucketList,
                                                   long tag) {
         int position = -1;
         for (int i = 0; i < bucketList.size(); i++) {
@@ -237,23 +194,22 @@ public final class CacheSimulator {
      * @param tag tag in cache.
      * @param bytesPerBlock Bytes per block.
      */
-    private static void loadExecute(long index, long tag, int bytesPerBlock,
-                                    int numSets, int blocksPerSet, int lru) {
-        numLoads++;
-        if (cache.containsKey(index)) {
-            ArrayList<CacheSlot> bucketList = cache.get(index);
-            int position = bucketListContainsSlot(bucketList, tag);
+    private void loadExecute(long index, long tag) {
+        this.numLoads++;
+        if (this.cache.containsKey(index)) {
+            ArrayList<CacheSlot> bucketList = this.cache.get(index);
+            int position = this.bucketListContainsSlot(bucketList, tag);
             if (position != -1) { // hit!
-                if (lru == 1) {
+                if (this.lru) {
                     //Bring that slot to the front of the arraylist
                     CacheSlot beingLoaded = bucketList.get(position);
                     bucketList.remove(position);
-                    bucketList.add(0, beingLoaded);  
+                    bucketList.add(0, beingLoaded);
                 } //Else FIFO: do nothing with loading in hit
-                numLoadHits++;
-                numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                this.numLoadHits++;
+                this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
             } else { // The tag doesn't match! But the bucket exists.
-                numLoadMisses++;
+                this.numLoadMisses++;
                 // Need to evict something and place our new data there.
                 // In both LRU and FIFO, if the bucket is not full,
                 // we just place the new data at the front.
@@ -262,43 +218,49 @@ public final class CacheSimulator {
                 // It works because the one at the last position will
                 // be different for the two cases, but the fact that
                 // we need to delete that guy is the same for both cases.
-                if (bucketList.size() < blocksPerSet) {
+                if (bucketList.size() < this.blocksPerSet) {
                     // Just add this new guy to the front
                     // Load contents from memory.
-                    bucketList.add(0, new CacheSlot(index, tag, 0));
-                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                    bucketList.add(0, new CacheSlot(index, tag));
+                    this.numCycles += MEMORY_CYCLE
+                                            * (this.bytesPerBlock / FOUR);
                 } else {
                     // The bucket is full. Evict least recently used.
                     if (!bucketList.get(bucketList.size() - 1).dirty) {
                         // Delete this guy
-                        numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                        this.numCycles += MEMORY_CYCLE
+                                            * (this.bytesPerBlock / FOUR);
                         // Load new guy
-                        numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                        this.numCycles += CACHE_CYCLE
+                                            * (this.bytesPerBlock / FOUR);
                     } else { // Dirty
                         // Write this old guy to memory
-                        numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                        this.numCycles += MEMORY_CYCLE
+                                            * (this.bytesPerBlock / FOUR);
                         // Load new guy to memory
-                        numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                        this.numCycles += MEMORY_CYCLE
+                                            * (this.bytesPerBlock / FOUR);
                         // Give result to CPU
-                        numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                        this.numCycles += CACHE_CYCLE
+                                            * (this.bytesPerBlock / FOUR);
                     }
                     bucketList.remove(bucketList.size() - 1);
-                    bucketList.add(0, new CacheSlot(index, tag, 0));
+                    bucketList.add(0, new CacheSlot(index, tag));
                 }
             }
         } else { // No cache for the index whatsoever!
-            numLoadMisses++;
+            this.numLoadMisses++;
             // Need to load data from memory from scratch.
             // First, create a new bucket.
             ArrayList<CacheSlot> bucket = new ArrayList<>();
             // Need to insert result into cache.
-            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-            CacheSlot toAdd = new CacheSlot(index, tag, 0);
+            this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
+            CacheSlot toAdd = new CacheSlot(index, tag);
             toAdd.dirty = false;
             bucket.add(toAdd);
-            cache.put(index, bucket);
+            this.cache.put(index, bucket);
             // Then return result in cache to CPU.
-            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+            this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
         }
     }
 
@@ -308,70 +270,75 @@ public final class CacheSimulator {
      * @param tag tag in cache.
      * @param bytesPerBlock Bytes per block.
      */
-    private static void storeExecute1(long index, long tag, int bytesPerBlock,
-                                      int numSets, int blocksPerSet, int lru) {
+    private void storeExecute1(long index, long tag) {
         // Write-back with write-allocate
         // Use dirty bit.
         // Don't ignore write miss.
-        numStores++;
-        if (cache.containsKey(index)) { // Something is in cache.
-            ArrayList<CacheSlot> bucketList = cache.get(index);
-            int position = bucketListContainsSlot(bucketList, tag);           
+        this.numStores++;
+        if (this.cache.containsKey(index)) { // Something is in cache.
+            ArrayList<CacheSlot> bucketList = this.cache.get(index);
+            int position = this.bucketListContainsSlot(bucketList, tag);
             if (position != -1) { // Hit!
-                numStoreHits++;
+                this.numStoreHits++;
                 bucketList.get(position).dirty = true;
-                if (lru == 1) {
+                if (this.lru) {
                     CacheSlot beingStored = bucketList.get(position);
                     bucketList.remove(position);
-                    bucketList.add(0, beingStored);    
+                    bucketList.add(0, beingStored);
                 }
-                numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
             } else { // Miss!
-                numStoreMisses++;
+                this.numStoreMisses++;
                 // First, check if the bucket is full
                 // If not, load from memory this data
                 // to the front and change it and mark dirty.
                 // If so, evict one block and do the same.
-                CacheSlot toAdd = new CacheSlot(index, tag, 0);
+                CacheSlot toAdd = new CacheSlot(index, tag);
                 toAdd.dirty = true;
-                if (bucketList.size() < blocksPerSet) {
+                if (bucketList.size() < this.blocksPerSet) {
                     bucketList.add(0, toAdd);
-                    numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-                    numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);                    
+                    this.numCycles += MEMORY_CYCLE
+                                        * (this.bytesPerBlock / FOUR);
+                    this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
                 } else {
                     // Need to evict something now.
                     // In both LRU and FIFO, remove the last one.
                     if (!bucketList.get(bucketList.size() - 1).dirty) {
                         // Just evict without further action.
                         // Load new guy from memory
-                        numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                        this.numCycles += MEMORY_CYCLE
+                                            * (this.bytesPerBlock / FOUR);
                         // Write to new guy in cache
-                        numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                        this.numCycles += CACHE_CYCLE
+                                            * (this.bytesPerBlock / FOUR);
                     } else { // dirty!
                         // Write this guy to memory first
-                        numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                        this.numCycles += MEMORY_CYCLE
+                                            * (this.bytesPerBlock / FOUR);
                         // Bring new guy into cache from memory
-                        numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                        this.numCycles += MEMORY_CYCLE
+                                            * (this.bytesPerBlock / FOUR);
                         // Write to new guy in cache
-                        numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                        this.numCycles += CACHE_CYCLE
+                                            * (this.bytesPerBlock / FOUR);
                     }
                     bucketList.remove(bucketList.size() - 1);
                     bucketList.add(0, toAdd);
                 }
             }
         } else { // Miss: Cache has nothing corresponding to the given index.
-            numStoreMisses++;
+            this.numStoreMisses++;
             // First, read from memory the correct block.
             // First, create a new bucket to reside in cache.
             ArrayList<CacheSlot> bucket = new ArrayList<>();
             // Fetch data from memory into cache.
-            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-            CacheSlot toAdd = new CacheSlot(index, tag, 0);
+            this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
+            CacheSlot toAdd = new CacheSlot(index, tag);
             toAdd.dirty = true;
             bucket.add(toAdd);
-            cache.put(index, bucket);
+            this.cache.put(index, bucket);
             // Write the result to thing in cache.
-            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+            this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
         }
     }
 
@@ -381,48 +348,48 @@ public final class CacheSimulator {
      * @param tag tag in cache.
      * @param bytesPerBlock Bytes per block.
      */
-    private static void storeExecute2(long index, long tag, int bytesPerBlock,
-                                      int numSets, int blocksPerSet, int lru) {        // Write through with write allocate.
+    private void storeExecute2(long index, long tag) {
+        // Write through with write allocate.
         // Don't use dirty bit --> write to both cache and RAM simultaneously.
         // Don't ignore write miss.
-        numStores++;
-        if (cache.containsKey(index)) { // Something is in cache.
-            ArrayList<CacheSlot> bucketList = cache.get(index);
-            int position = bucketListContainsSlot(bucketList, tag);
+        this.numStores++;
+        if (this.cache.containsKey(index)) { // Something is in cache.
+            ArrayList<CacheSlot> bucketList = this.cache.get(index);
+            int position = this.bucketListContainsSlot(bucketList, tag);
             if (position != -1) { // Hit!
-                numStoreHits++;
-                if (lru == 1) {
+                this.numStoreHits++;
+                if (this.lru) {
                     CacheSlot beingStored = bucketList.get(position);
                     bucketList.remove(position);
                     bucketList.add(0, beingStored);
                 }
-                numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
             } else { // Miss!
-                numStoreMisses++;
-                CacheSlot toAdd = new CacheSlot(index, tag, 0);
+                this.numStoreMisses++;
+                CacheSlot toAdd = new CacheSlot(index, tag);
                 // If bucektlist full, evict the last one.
-                if (bucketList.size() >= blocksPerSet) {
+                if (bucketList.size() >= this.blocksPerSet) {
                     bucketList.remove(bucketList.size() - 1);
                 }
                 // First, write to cache.
                 bucketList.add(0, toAdd);
-                numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
                 // Then, write to memory
-                numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
             }
         } else { // Miss: Cache has nothing corresponding to the given index.
-            numStoreMisses++;
+            this.numStoreMisses++;
             // First, need to create the right bucket.
             ArrayList<CacheSlot> bucket = new ArrayList<>();
             // First, read from memory the correct block.
-            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-            CacheSlot toAdd = new CacheSlot(index, tag, 0);
+            this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
+            CacheSlot toAdd = new CacheSlot(index, tag);
             // Then, write to cache.
             bucket.add(toAdd);
-            cache.put(index, bucket);
-            numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+            this.cache.put(index, bucket);
+            this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
             // Then, write this again to memory.
-            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+            this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
         }
     }
 
@@ -432,56 +399,48 @@ public final class CacheSimulator {
      * @param tag tag in cache.
      * @param bytesPerBlock Bytes per block.
      */
-    private static void storeExecute3(long index, long tag, int bytesPerBlock,
-                                      int numSets, int blocksPerSet, int lru) {        // Write through with no write allocate.
+    private void storeExecute3(long index, long tag) {
+        // Write through with no write allocate.
         // Don't use dirty bit --> write to both cache and RAM simultaneously.
         // Ignore write miss.
         // data at the missed-write location is not loaded to cache,
         // and is written directly to the backing store.
-        numStores++;
-        if (cache.containsKey(index)) { // Something is in cache.
-            ArrayList<CacheSlot> bucketList = cache.get(index);
-            int position = bucketListContainsSlot(bucketList, tag);
+        this.numStores++;
+        if (this.cache.containsKey(index)) { // Something is in cache.
+            ArrayList<CacheSlot> bucketList = this.cache.get(index);
+            int position = this.bucketListContainsSlot(bucketList, tag);
             if (position != -1) { // Hit!
-                if (lru == 1) {
+                if (this.lru) {
                     CacheSlot beingStored = bucketList.get(position);
                     bucketList.remove(position);
                     bucketList.add(0, beingStored);
                 }
-                numStoreHits++;
-                numCycles += CACHE_CYCLE * (bytesPerBlock / FOUR);
+                this.numStoreHits++;
+                this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
             } else { // Miss!
-                numStoreMisses++;
+                this.numStoreMisses++;
                 // Then, write directly to memory
-                numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
+                this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
             }
         } else { // Miss: Cache has nothing corresponding to the given index.
-            numStoreMisses++;
+            this.numStoreMisses++;
             // Write directly to memory.
-            numCycles += MEMORY_CYCLE * (bytesPerBlock / FOUR);
-        } 
+            this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
+        }
     }
-
-    // Need to do: write storeExecute3.
-    // Need to do: take set associativity into consideration.
-    // Need to do: make sure cycle addition is correct.
-    // Need to do: make sure hit vs. miss is correct.
 
     /**
      * Prints the result of prediction simulation on stdout.
      */
-    private static void printRes() {
-        System.out.println("Total loads: " + numLoads);
-        System.out.println("Total stores: " + numStores);
-        System.out.println("Load hits: " + numLoadHits);
-        System.out.println("Load misses: " + numLoadMisses);
-        System.out.println("Store hits: " + numStoreHits);
-        System.out.println("Store misses: " + numStoreMisses);
-        System.out.println("Total cycles: " + numCycles);
+    private void printRes() {
+        System.out.println("Total loads: " + this.numLoads);
+        System.out.println("Total stores: " + this.numStores);
+        System.out.println("Load hits: " + this.numLoadHits);
+        System.out.println("Load misses: " + this.numLoadMisses);
+        System.out.println("Store hits: " + this.numStoreHits);
+        System.out.println("Store misses: " + this.numStoreMisses);
+        System.out.println("Total cycles: " + this.numCycles);
     }
-
-    /******************************************************************/
-    /** Input validation helper methods. */
 
     /**
      * Checks if the input file exists and opens.
@@ -489,9 +448,9 @@ public final class CacheSimulator {
      * @return true if file exists.
      * @throws IOException If file does not exist.
      */
-    private static boolean fileValid(String fileName) throws IOException {
+    private boolean fileValid() throws IOException {
         try {
-            File file = new File(fileName);
+            File file = new File(this.inputFile);
             BufferedReader br = new BufferedReader(new FileReader(file));
             br.close();
         } catch (IOException ioe) {
@@ -502,73 +461,52 @@ public final class CacheSimulator {
     }
 
     /**
+     *
+     * @param args
+     */
+    private void parseArguments(String[] args) {
+        try {
+            this.numSets = Integer.parseInt(args[0]);
+            this.blocksPerSet = Integer.parseInt(args[1]);
+            this.bytesPerBlock = Integer.parseInt(args[2]);
+            this.writeAllocate = this.stringToBool(args[THREE]);
+            this.writeThrough = this.stringToBool(args[FOUR]);
+            this.lru = this.stringToBool(args[FIVE]);
+            this.inputFile = args[SIX];
+        } catch (NumberFormatException nfe) {
+            System.err.println("Input arguments number format error!");
+            System.exit(1);
+        }
+    }
+
+    /**
      * Checks if all the input parameters are valid.
+     * If all the checks pass, the results will have
+     * been saved in their corresponding member variables.
      * @param args The input params.
      * @return True if all inputs valid.
      */
-    private static boolean allInputValid(String[] args) {
-        int numSets = 0;
-        int blocksPerSet = 0;
-        int bytesPerBlock = 0;
-        int writeAlloc = 0;
-        int writeThrough = 0;
-        int lru = 0;
+    private boolean allInputValid() {
+        return this.numSets > 0 && this.blocksPerSet > 0
+               && this.isTwosPower(this.numSets)
+               && this.isTwosPower(this.blocksPerSet)
+               && this.bytesPerBlock >= FOUR
+               && this.isTwosPower(this.bytesPerBlock)
+               && (this.writeAllocate || this.writeThrough);
+    }
 
-        try {
-            numSets = Integer.parseInt(args[0]);
-            blocksPerSet = Integer.parseInt(args[1]);
-            bytesPerBlock = Integer.parseInt(args[2]);
-            writeAlloc = Integer.parseInt(args[THREE]);
-            writeThrough = Integer.parseInt(args[FOUR]);
-            lru = Integer.parseInt(args[FIVE]);
-        } catch (NumberFormatException nfe) {
-            System.err.println("Input number format error!");
+    private boolean stringToBool(String s) {
+        if (s.equals("1")) {
+            return true;
+        } else if (s.equals("0")) {
+            return false;
+        } else {
+            System.err.println("Wrong number format for "
+                                + "writeAllocate, writeThrough, "
+                                + "and lru/FIFO!");
             System.exit(1);
+            return false;
         }
-
-        boolean firstThirdValid = firstThirdCheck(numSets, blocksPerSet);
-        boolean secondThirdValid = secondThirdCheck(bytesPerBlock, writeAlloc);
-        boolean lastThirdValid = lastThirdCheck(writeThrough, lru);
-        boolean noWriteAllocWriteBack = (writeAlloc == 0 && writeThrough == 0);
-
-        // Didn't check if user entered lru or FIFO for direct mapped caches.
-        // If the configuration is set for a direct mapped cache, but the
-        // user entered lru or FIFO, just ignore.
-        return firstThirdValid && secondThirdValid && lastThirdValid
-                && !noWriteAllocWriteBack;
-    }
-
-    /**
-     * Checks if the first third of the inputs are valid.
-     * @param numSets number of sets in the cache.
-     * @param blocksPerSet number of blocks in each set.
-     * @return True if both valid. Else false.
-     */
-    private static boolean firstThirdCheck(int numSets, int blocksPerSet) {
-        return isTwosPower(numSets) && isTwosPower(blocksPerSet);
-    }
-
-    /**
-     * Checks if the second third of the inputs are valid.
-     * @param bytesPerBlock number of bytes in each block.
-     * @param writeAllocate write-allocate (1) or not (0).
-     * @return True if all input valid. Else false.
-     */
-    private static boolean secondThirdCheck(int bytesPerBlock,
-                                            int writeAllocate) {
-        return isTwosPower(bytesPerBlock) && bytesPerBlock >= FOUR
-                && (writeAllocate == 1 || writeAllocate == 0);
-    }
-
-    /**
-     * Checks if the last third of the inputs are valid.
-     * @param writeThrough write-through (1) or write-back (0).
-     * @param lru least-recently-used (1) or FIFO (0) evictions.
-     * @return True if all input valid. Else false.
-     */
-    private static boolean lastThirdCheck(int writeThrough, int lru) {
-        return (writeThrough == 1 || writeThrough == 0)
-                && (lru == 1 || lru == 0);
     }
 
     /**
@@ -576,12 +514,9 @@ public final class CacheSimulator {
      * @param num the number to be tested.
      * @return true if power of 2.
      */
-    private static boolean isTwosPower(int num) {
+    private boolean isTwosPower(int num) {
         return (num & (num - 1)) == 0;
     }
-
-    /******************************************************************/
-    /** Main method. */
 
     /**
      * Main driver for this program.
@@ -590,49 +525,19 @@ public final class CacheSimulator {
      */
     public static void main(String[] args) throws IOException {
 
-        // Sample command line input:
-        // java CacheSimulator 256 4 16 1 0 1 gcc.trace
-
-        // args[0]: number of sets in the cache (a positive power-of-2)
-        // args[1]: number of blocks in each set (a positive power-of-2)
-        // args[2]: number of bytes in each block (a pos power-of-2, at least 4)
-        // args[3]: write-allocate (1) or not (0)
-        // args[4]: write-through (1) or write-back (0)
-        // args[5]: least-recently-used (1) or FIFO (0) evictions
-        // args[6]: input trace file
-
         if (args.length != SEVEN) {
             System.err.println("Wrong number of arguments!");
             System.exit(1);
         }
 
-        if (allInputValid(args) && fileValid(args[SIX])) {
-            executeSimulation(args);
-            printRes();
+        CacheSimulator cs = new CacheSimulator(args);
+
+        if (cs.allInputValid() && cs.fileValid()) {
+            cs.executeSimulation();
+            cs.printRes();
         } else {
             System.err.println("Invalid input!");
             System.exit(1);
-        }
-    }
-
-    private static class CacheSlot {
-        private long index;
-        private boolean dirty;
-        private long tag;
-        private long data; //???
-
-        /**
-         * Constructor for the CacheSlot class.
-         * @param index
-         * @param valid
-         * @param tag
-         * @param data
-         */
-        CacheSlot(long index, long tag, long data) {
-            this.index = index;
-            this.dirty = false;
-            this.tag = tag;
-            this.data = data;
         }
     }
 }
