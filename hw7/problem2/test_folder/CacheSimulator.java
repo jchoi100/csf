@@ -128,10 +128,10 @@ public final class CacheSimulator {
         int cutoff = address.length() - this.offset;
 
         // Extract set number
-        int set = (this.index == 0) ? 0 : Integer.parseInt(address.substring(
-            cutoff - this.index, cutoff), 2);
+        int set = (this.indexLength == 0) ? 0 : Integer.parseInt(address.substring(
+            cutoff - this.indexLength, cutoff), 2);
         // Extract tag
-        int tag = Integer.parseInt(address.substring(0, cutoff - this.index), 2);
+        int tag = Integer.parseInt(address.substring(0, cutoff - this.indexLength), 2);
 
         return new Address(set, tag);
     }
