@@ -65,10 +65,16 @@ public final class CacheSimulator {
     /** Total number of cycles. */
     private int numCycles;
 
-    private int offset, numSets, blocksPerSet, bytesPerBlock, indexLength;
+    /** Offset and indexLength for parsing address. */
+    private int offset, numSets;
 
+    /** Input arguments. */
+    private int blocksPerSet, bytesPerBlock, indexLength;
+
+    /** Boolienized form for the three input arguments given as numbers. */
     private boolean writeThrough, writeAllocate, lru;
 
+    /** Input file name. */
     private String inputFile;
 
     /** Our cache. */
@@ -84,8 +90,8 @@ public final class CacheSimulator {
 
         /**
          * Constructor for the CacheSlot class.
-         * @param index
-         * @param tag
+         * @param index index of the address.
+         * @param tag tag of the address.
          */
         CacheSlot(long i, long t) {
             this.index = i;
@@ -95,7 +101,9 @@ public final class CacheSimulator {
     }
 
     /**
-     *
+     * Constructor for the CacheSimulator class.
+     * Initializes member variables.
+     * @param args Arguments given.
      */
     private CacheSimulator(String[] args) {
         this.parseArguments(args);
@@ -116,7 +124,6 @@ public final class CacheSimulator {
      * @throws IOException if file cannot be opened.
      */
     private void executeSimulation() throws IOException {
-        // Let's first write the program for case 1 --> should be easiest
         File file = new File(this.inputFile);
         BufferedReader br = new BufferedReader(new FileReader(file));
 
@@ -167,16 +174,34 @@ public final class CacheSimulator {
         br.close();
     }
 
+    /**
+     * Parses the index from raw address.
+     * @param address String address.
+     * @param cutoff Cutoff to be used for parsing index.
+     * @return index part of the address.
+     */
     private int getIndex(String address, int cutoff) {
         return (this.indexLength == 0) ? 0 : Integer.parseInt(address.substring(
             cutoff - this.indexLength, cutoff), 2);
     }
 
+    /**
+     * Parses the tag from raw address.
+     * @param address String address.
+     * @param cutoff Cutoff to be used for parsing tag.
+     * @return tag part of the address.
+     */
     private int getTag(String address, int cutoff) {
         return Integer.parseInt(address.substring(0,
                 cutoff - this.indexLength), 2);
     }
 
+    /**
+     * Checks if the given bucket list contains the slot with the tag.
+     * @param bucketList list of slots.
+     * @param tag the tag we want to see if it exists or not.
+     * @return position of slot if tag match, -1 if not.
+     */
     private int bucketListContainsSlot(ArrayList<CacheSlot> bucketList,
                                                   long tag) {
         int position = -1;
@@ -192,7 +217,6 @@ public final class CacheSimulator {
      * Execution for load case.
      * @param index index into cache.
      * @param tag tag in cache.
-     * @param bytesPerBlock Bytes per block.
      */
     private void loadExecute(long index, long tag) {
         this.numLoads++;
@@ -266,9 +290,9 @@ public final class CacheSimulator {
 
     /**
      * Execution for store case.
+     * Write back, write allocate
      * @param index index into cache.
      * @param tag tag in cache.
-     * @param bytesPerBlock Bytes per block.
      */
     private void storeExecute1(long index, long tag) {
         // Write-back with write-allocate
@@ -344,9 +368,9 @@ public final class CacheSimulator {
 
     /**
      * Execution for store case.
+     * Write through, write allocate
      * @param index index into cache.
      * @param tag tag in cache.
-     * @param bytesPerBlock Bytes per block.
      */
     private void storeExecute2(long index, long tag) {
         // Write through with write allocate.
@@ -395,9 +419,9 @@ public final class CacheSimulator {
 
     /**
      * Execution for store case.
+     * Write through, no write allocate
      * @param index index into cache.
      * @param tag tag in cache.
-     * @param bytesPerBlock Bytes per block.
      */
     private void storeExecute3(long index, long tag) {
         // Write through with no write allocate.
@@ -430,7 +454,7 @@ public final class CacheSimulator {
     }
 
     /**
-     * Prints the result of prediction simulation on stdout.
+     * Prints the result of prediction simulation on std out.
      */
     private void printRes() {
         System.out.println("Total loads: " + this.numLoads);
@@ -444,7 +468,6 @@ public final class CacheSimulator {
 
     /**
      * Checks if the input file exists and opens.
-     * @param fileName The input file name.
      * @return true if file exists.
      * @throws IOException If file does not exist.
      */
@@ -461,8 +484,8 @@ public final class CacheSimulator {
     }
 
     /**
-     *
-     * @param args
+     * Parses all the given input arguments to the format we want.
+     * @param args the input arguments.
      */
     private void parseArguments(String[] args) {
         try {
@@ -481,9 +504,6 @@ public final class CacheSimulator {
 
     /**
      * Checks if all the input parameters are valid.
-     * If all the checks pass, the results will have
-     * been saved in their corresponding member variables.
-     * @param args The input params.
      * @return True if all inputs valid.
      */
     private boolean allInputValid() {
@@ -495,6 +515,12 @@ public final class CacheSimulator {
                && (this.writeAllocate || this.writeThrough);
     }
 
+    /**
+     * Used for write-allocate, write-through, lru.
+     * It's easier for us to use these as boolean type than int.
+     * @param s the argument to convert to boolean.
+     * @return Boolean form of the input string.
+     */
     private boolean stringToBool(String s) {
         if (s.equals("1")) {
             return true;
