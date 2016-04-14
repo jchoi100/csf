@@ -471,17 +471,30 @@ public final class CacheSimulator {
         int argc = 0;
         try {
             this.numSets = Integer.parseInt(args[0]);
+            if (this.numSets <= 0 || !this.isTwosPower(this.numSets)) {
+                System.err.println("Input args[" + argc + "] error!");
+                System.exit(1);                
+            }
             argc++;
             this.blocksPerSet = Integer.parseInt(args[1]);
+            if (this.blocksPerSet <= 0 || !this.isTwosPower(this.blocksPerSet)) {
+                System.err.println("Input args[" + argc + "] error!");
+                System.exit(1);                  
+            }
             argc++;
             this.bytesPerBlock = Integer.parseInt(args[2]);
+            if (this.bytesPerBlock < FOUR || !this.isTwosPower(this.bytesPerBlock)) {
+                System.err.println("Input args[" + argc + "] error!");
+                System.exit(1);                  
+            }
             argc++;
             this.writeAllocate = this.stringToBool(args[THREE], argc);
-            argc++;
             this.writeThrough = this.stringToBool(args[FOUR], argc);
-            argc++;
+            if (!this.writeAllocate && !this.writeThrough) {
+                System.err.println("Cannot configure write-back and no write allocate together!");
+                System.exit(1);                  
+            }
             this.lru = this.stringToBool(args[FIVE], argc);
-            argc++;
             this.inputFile = args[SIX];
         } catch (NumberFormatException nfe) {
             System.err.println("Input args[" + argc + "] should be a number!");
@@ -543,12 +556,20 @@ public final class CacheSimulator {
 
         CacheSimulator cs = new CacheSimulator(args);
 
-        if (cs.allInputValid() && cs.fileValid()) {
+        if (cs.fileValid()) {
             cs.executeSimulation();
             cs.printRes();
         } else {
             System.err.println("Invalid input!");
             System.exit(1);
         }
+
+        // if (cs.allInputValid() && cs.fileValid()) {
+        //     cs.executeSimulation();
+        //     cs.printRes();
+        // } else {
+        //     System.err.println("Invalid input!");
+        //     System.exit(1);
+        // }
     }
 }
