@@ -308,7 +308,7 @@ public final class CacheSimulator {
      */
     private void printRes() {
         int totalLoads = this.numLoadHits + this.numLoadMisses;
-        int totalStores = this.numLoadHits + this.numLoadMisses;
+        int totalStores = this.numStoreHits + this.numStoreMisses;
 
         System.out.println("Total loads: " + totalLoads);
         System.out.println("Total stores: " + totalStores);
