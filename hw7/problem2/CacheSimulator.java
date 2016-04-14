@@ -231,7 +231,6 @@ public final class CacheSimulator {
                     bucketList.add(0, beingLoaded);
                 } //Else FIFO: do nothing with loading in hit
                 this.numLoadHits++;
-                this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
             } else { // The tag doesn't match! But the bucket exists.
                 this.numLoadMisses++;
                 // Need to evict something and place our new data there.
@@ -239,33 +238,25 @@ public final class CacheSimulator {
                 // we just place the new data at the front.
                 // If the bucket is full, we evict the one at the
                 // last position of the arraylist.
-                // It works because the one at the last position will
-                // be different for the two cases, but the fact that
-                // we need to delete that guy is the same for both cases.
                 if (bucketList.size() < this.blocksPerSet) {
                     // Just add this new guy to the front
-                    // Load contents from memory.
+                    // Load contents to cache from memory.
                     bucketList.add(0, new CacheSlot(index, tag));
                     this.numCycles += MEMORY_CYCLE
                                             * (this.bytesPerBlock / FOUR);
                 } else {
                     // The bucket is full. Evict least recently used.
                     if (!bucketList.get(bucketList.size() - 1).dirty) {
-                        // Delete this guy
+                        // Not dirty.
+                        // Overwrite the guy to be evicted with new guy
                         this.numCycles += MEMORY_CYCLE
                                             * (this.bytesPerBlock / FOUR);
-                        // Load new guy
-                        this.numCycles += CACHE_CYCLE
-                                            * (this.bytesPerBlock / FOUR);
-                    } else { // Dirty
+                    } else { // Dirty.
                         // Write this old guy to memory
                         this.numCycles += MEMORY_CYCLE
                                             * (this.bytesPerBlock / FOUR);
                         // Load new guy to memory
                         this.numCycles += MEMORY_CYCLE
-                                            * (this.bytesPerBlock / FOUR);
-                        // Give result to CPU
-                        this.numCycles += CACHE_CYCLE
                                             * (this.bytesPerBlock / FOUR);
                     }
                     bucketList.remove(bucketList.size() - 1);
@@ -284,8 +275,9 @@ public final class CacheSimulator {
             bucket.add(toAdd);
             this.cache.put(index, bucket);
             // Then return result in cache to CPU.
-            this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
         }
+        // Then load this to CPU from cache.
+        this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
     }
 
     /**
@@ -310,7 +302,7 @@ public final class CacheSimulator {
                     bucketList.remove(position);
                     bucketList.add(0, beingStored);
                 }
-                this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
+                // Write the result to thing in cache.
             } else { // Miss!
                 this.numStoreMisses++;
                 // First, check if the bucket is full
@@ -323,7 +315,7 @@ public final class CacheSimulator {
                     bucketList.add(0, toAdd);
                     this.numCycles += MEMORY_CYCLE
                                         * (this.bytesPerBlock / FOUR);
-                    this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
+                    // Write to new guy in cache
                 } else {
                     // Need to evict something now.
                     // In both LRU and FIFO, remove the last one.
@@ -333,8 +325,6 @@ public final class CacheSimulator {
                         this.numCycles += MEMORY_CYCLE
                                             * (this.bytesPerBlock / FOUR);
                         // Write to new guy in cache
-                        this.numCycles += CACHE_CYCLE
-                                            * (this.bytesPerBlock / FOUR);
                     } else { // dirty!
                         // Write this guy to memory first
                         this.numCycles += MEMORY_CYCLE
@@ -343,8 +333,6 @@ public final class CacheSimulator {
                         this.numCycles += MEMORY_CYCLE
                                             * (this.bytesPerBlock / FOUR);
                         // Write to new guy in cache
-                        this.numCycles += CACHE_CYCLE
-                                            * (this.bytesPerBlock / FOUR);
                     }
                     bucketList.remove(bucketList.size() - 1);
                     bucketList.add(0, toAdd);
@@ -362,8 +350,9 @@ public final class CacheSimulator {
             bucket.add(toAdd);
             this.cache.put(index, bucket);
             // Write the result to thing in cache.
-            this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
         }
+        // Write the result to thing in cache.
+        this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
     }
 
     /**
@@ -387,7 +376,6 @@ public final class CacheSimulator {
                     bucketList.remove(position);
                     bucketList.add(0, beingStored);
                 }
-                this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
             } else { // Miss!
                 this.numStoreMisses++;
                 CacheSlot toAdd = new CacheSlot(index, tag);
@@ -395,11 +383,9 @@ public final class CacheSimulator {
                 if (bucketList.size() >= this.blocksPerSet) {
                     bucketList.remove(bucketList.size() - 1);
                 }
-                // First, write to cache.
-                bucketList.add(0, toAdd);
-                this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
-                // Then, write to memory
+                // First, bring to cache from memory.
                 this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
+                bucketList.add(0, toAdd);
             }
         } else { // Miss: Cache has nothing corresponding to the given index.
             this.numStoreMisses++;
@@ -408,13 +394,13 @@ public final class CacheSimulator {
             // First, read from memory the correct block.
             this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
             CacheSlot toAdd = new CacheSlot(index, tag);
-            // Then, write to cache.
             bucket.add(toAdd);
             this.cache.put(index, bucket);
-            this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
-            // Then, write this again to memory.
-            this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
         }
+        // First, write to cache.
+        this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
+        // Then, write to memory
+        this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
     }
 
     /**
@@ -443,14 +429,13 @@ public final class CacheSimulator {
                 this.numCycles += CACHE_CYCLE * (this.bytesPerBlock / FOUR);
             } else { // Miss!
                 this.numStoreMisses++;
-                // Then, write directly to memory
-                this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
             }
         } else { // Miss: Cache has nothing corresponding to the given index.
             this.numStoreMisses++;
-            // Write directly to memory.
-            this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
+
         }
+        // Write directly to memory.
+        this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
     }
 
     /**
