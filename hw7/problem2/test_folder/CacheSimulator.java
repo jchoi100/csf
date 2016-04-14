@@ -82,6 +82,9 @@ public final class CacheSimulator {
     /** Total number of cycles. */
     private int numCycles;
 
+    private int offset;
+
+
     /** Our cache. */
     private ArrayList<HashMap<Integer, Boolean>> cache;
 
@@ -101,6 +104,8 @@ public final class CacheSimulator {
             this.evictionQueue.add(new ArrayList<Integer>());
         }
 
+        this.offset = (int) (Math.log(this.bytes) / Math.log(2));
+
         this.numLoadHits = 0;
         this.numLoadMisses = 0;
         this.numStoreHits = 0;
@@ -111,23 +116,44 @@ public final class CacheSimulator {
     }
 
     /**
-     *
-     * @param addressLong
-     * @return
+     * Break up the string representation of a 32-bit address into the necessary
+     * offset, set index, and tag identifiers.
+     * @param address the address to parse
+     * @return an Address object parsed from the string input
      */
-    private Address parseAddress(long addressLong) {
+    private Address parseAddress(String address) throws NumberFormatException {
+        // Convert hex address to binary string
+        address = String.format("%32s",
+            Long.toBinaryString(Long.decode(address))).replace(' ', '0');
+        int cutoff = address.length() - this.offset;
 
-        // Set mask for getting index.
-        long mask = (1 << this.indexLength) - 1;
-        long index = addressLong & mask;
+        // Extract set number
+        int set = (this.index == 0) ? 0 : Integer.parseInt(address.substring(
+            cutoff - this.index, cutoff), 2);
+        // Extract tag
+        int tag = Integer.parseInt(address.substring(0, cutoff - this.index), 2);
 
-        // Flip mask bits to get mask for getting tag.
-        mask = ~mask;
-        long tag = (addressLong & mask);
-        tag >>= this.indexLength;
-
-        return new Address((int) index, (int) tag);
+        return new Address(set, tag);
     }
+
+    // /**
+    //  *
+    //  * @param addressLong
+    //  * @return
+    //  */
+    // private Address parseAddress(long addressLong) {
+
+    //     // Set mask for getting index.
+    //     long mask = (1 << this.indexLength) - 1;
+    //     long index = addressLong & mask;
+
+    //     // Flip mask bits to get mask for getting tag.
+    //     mask = ~mask;
+    //     long tag = (addressLong & mask);
+    //     tag >>= this.indexLength;
+
+    //     return new Address((int) index, (int) tag);
+    // }
 
     /**
      * Executes simulation.
@@ -165,7 +191,7 @@ public final class CacheSimulator {
                 System.exit(1);
             }
 
-            Address address = this.parseAddress(addressLong);
+            Address address = this.parseAddress(addressStr);
 
             // Do the actual simulation.
             if (type.equalsIgnoreCase("l")) {
