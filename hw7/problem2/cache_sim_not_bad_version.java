@@ -78,6 +78,8 @@ public final class CacheSimulator {
      * Class to contain info about a cache slot.
      */
     private class CacheSlot {
+        /** Index for the address of this slot. */
+        private long index;
 
         /** Tag for this address. */
         private long tag;
@@ -90,7 +92,8 @@ public final class CacheSimulator {
          * @param index index of the address.
          * @param tag tag of the address.
          */
-        CacheSlot(long t) {
+        CacheSlot(long i, long t) {
+            this.index = i;
             this.dirty = false;
             this.tag = t;
         }
@@ -239,7 +242,7 @@ public final class CacheSimulator {
                 if (bucketList.size() < this.blocksPerSet) {
                     // Just add this new guy to the front
                     // Load contents to cache from memory.
-                    bucketList.add(0, new CacheSlot(tag));
+                    bucketList.add(0, new CacheSlot(index, tag));
                     this.numCycles += MEMORY_CYCLE
                                             * (this.bytesPerBlock / FOUR);
                 } else {
@@ -258,7 +261,7 @@ public final class CacheSimulator {
                                             * (this.bytesPerBlock / FOUR);
                     }
                     bucketList.remove(bucketList.size() - 1);
-                    bucketList.add(0, new CacheSlot(tag));
+                    bucketList.add(0, new CacheSlot(index, tag));
                 }
             }
         } else { // No cache for the index whatsoever!
@@ -268,7 +271,7 @@ public final class CacheSimulator {
             ArrayList<CacheSlot> bucket = new ArrayList<>();
             // Need to insert result into cache.
             this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
-            CacheSlot toAdd = new CacheSlot(tag);
+            CacheSlot toAdd = new CacheSlot(index, tag);
             toAdd.dirty = false;
             bucket.add(toAdd);
             this.cache.put(index, bucket);
@@ -306,7 +309,7 @@ public final class CacheSimulator {
                 // If not, load from memory this data
                 // to the front and change it and mark dirty.
                 // If so, evict one block and do the same.
-                CacheSlot toAdd = new CacheSlot(tag);
+                CacheSlot toAdd = new CacheSlot(index, tag);
                 toAdd.dirty = true;
                 if (bucketList.size() < this.blocksPerSet) {
                     bucketList.add(0, toAdd);
@@ -342,7 +345,7 @@ public final class CacheSimulator {
             ArrayList<CacheSlot> bucket = new ArrayList<>();
             // Fetch data from memory into cache.
             this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
-            CacheSlot toAdd = new CacheSlot(tag);
+            CacheSlot toAdd = new CacheSlot(index, tag);
             toAdd.dirty = true;
             bucket.add(toAdd);
             this.cache.put(index, bucket);
@@ -374,7 +377,7 @@ public final class CacheSimulator {
                 }
             } else { // Miss!
                 this.numStoreMisses++;
-                CacheSlot toAdd = new CacheSlot(tag);
+                CacheSlot toAdd = new CacheSlot(index, tag);
                 // If bucektlist full, evict the last one.
                 if (bucketList.size() >= this.blocksPerSet) {
                     bucketList.remove(bucketList.size() - 1);
@@ -389,7 +392,7 @@ public final class CacheSimulator {
             ArrayList<CacheSlot> bucket = new ArrayList<>();
             // First, read from memory the correct block.
             this.numCycles += MEMORY_CYCLE * (this.bytesPerBlock / FOUR);
-            CacheSlot toAdd = new CacheSlot(tag);
+            CacheSlot toAdd = new CacheSlot(index, tag);
             bucket.add(toAdd);
             this.cache.put(index, bucket);
         }
@@ -471,33 +474,14 @@ public final class CacheSimulator {
         int argc = 0;
         try {
             this.numSets = Integer.parseInt(args[0]);
-            if (this.numSets <= 0 || !this.isTwosPower(this.numSets)) {
-                System.err.println("Input args[" + argc + "] error!");
-                System.exit(1);
-            }
             argc++;
             this.blocksPerSet = Integer.parseInt(args[1]);
-            if (this.blocksPerSet <= 0
-                || !this.isTwosPower(this.blocksPerSet)) {
-                System.err.println("Input args[" + argc + "] error!");
-                System.exit(1);
-            }
             argc++;
             this.bytesPerBlock = Integer.parseInt(args[2]);
-            if (this.bytesPerBlock < FOUR
-                || !this.isTwosPower(this.bytesPerBlock)) {
-                System.err.println("Input args[" + argc + "] error!");
-                System.exit(1);
-            }
             argc++;
             this.writeAllocate = this.stringToBool(args[THREE], argc);
             argc++;
             this.writeThrough = this.stringToBool(args[FOUR], argc);
-            if (!this.writeAllocate && !this.writeThrough) {
-                System.err.println("Cannot configure write back "
-                        + "and no write allocate together!");
-                System.exit(1);
-            }
             argc++;
             this.lru = this.stringToBool(args[FIVE], argc);
             argc++;
@@ -506,6 +490,19 @@ public final class CacheSimulator {
             System.err.println("Input args[" + argc + "] should be a number!");
             System.exit(1);
         }
+    }
+
+    /**
+     * Checks if all the input parameters are valid.
+     * @return True if all inputs valid.
+     */
+    private boolean allInputValid() {
+        return this.numSets > 0 && this.blocksPerSet > 0
+               && this.isTwosPower(this.numSets)
+               && this.isTwosPower(this.blocksPerSet)
+               && this.bytesPerBlock >= FOUR
+               && this.isTwosPower(this.bytesPerBlock)
+               && (this.writeAllocate || this.writeThrough);
     }
 
     /**
@@ -541,6 +538,7 @@ public final class CacheSimulator {
      * @throws IOException When file cannot be found.
      */
     public static void main(String[] args) throws IOException {
+
         if (args.length != SEVEN) {
             System.err.println("Wrong number of arguments!");
             System.exit(1);
@@ -548,7 +546,7 @@ public final class CacheSimulator {
 
         CacheSimulator cs = new CacheSimulator(args);
 
-        if (cs.fileValid()) {
+        if (cs.allInputValid() && cs.fileValid()) {
             cs.executeSimulation();
             cs.printRes();
         } else {
