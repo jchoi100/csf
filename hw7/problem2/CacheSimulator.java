@@ -489,12 +489,15 @@ public final class CacheSimulator {
             }
             argc++;
             this.writeAllocate = this.stringToBool(args[THREE], argc);
+            argc++;
             this.writeThrough = this.stringToBool(args[FOUR], argc);
             if (!this.writeAllocate && !this.writeThrough) {
                 System.err.println("Cannot configure write-back and no write allocate together!");
                 System.exit(1);                  
             }
+            argc++;
             this.lru = this.stringToBool(args[FIVE], argc);
+            argc++;
             this.inputFile = args[SIX];
         } catch (NumberFormatException nfe) {
             System.err.println("Input args[" + argc + "] should be a number!");
