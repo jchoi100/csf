@@ -180,7 +180,8 @@ public final class CacheSimulator {
             // Try parsing all the information.
             try {
                 type = lineScanner.next().trim();
-                addressStr = lineScanner.next().trim().substring(2);
+                //addressStr = lineScanner.next().trim().substring(2);
+                addressStr = lineScanner.next().trim();
                 thirdCol = lineScanner.next().trim();
                 addressLong = Long.parseLong(addressStr, SIXTEEN);
             } catch (NoSuchElementException nse) {
