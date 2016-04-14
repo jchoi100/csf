@@ -115,18 +115,18 @@ public final class CacheSimulator {
      * @param addressLong
      * @return
      */
-    private Address parseAddress(int addressLong) {
+    private Address parseAddress(long addressLong) {
 
         // Set mask for getting index.
-        int mask = (1 << this.indexLength) - 1;
-        int index = addressLong & mask;
+        long mask = (1 << this.indexLength) - 1;
+        long index = addressLong & mask;
 
         // Flip mask bits to get mask for getting tag.
         mask = ~mask;
-        int tag = (addressLong & mask);
+        long tag = (addressLong & mask);
         tag >>= this.indexLength;
 
-        return new Address(index, tag);
+        return new Address((int) index, (int) tag);
     }
 
     /**
@@ -149,14 +149,14 @@ public final class CacheSimulator {
             String type = "";
             String addressStr = "";
             String thirdCol = "";
-            int addressLong = 0;
+            long addressLong = 0;
 
             // Try parsing all the information.
             try {
                 type = lineScanner.next().trim();
                 addressStr = lineScanner.next().trim().substring(2);
                 thirdCol = lineScanner.next().trim();
-                addressLong = Integer.parseInt(addressStr, SIXTEEN);
+                addressLong = Long.parseLong(addressStr, SIXTEEN);
             } catch (NoSuchElementException nse) {
                 System.err.println("Wrong number of fields in trace file!");
                 System.exit(1);
