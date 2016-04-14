@@ -120,9 +120,10 @@ public final class CacheSimulator {
             // Try parsing all the information.
             try {
                 type = lineScanner.next().trim();
-                address = lineScanner.next().trim().substring(2);
+                address = lineScanner.next().trim();
+                // address = lineScanner.next().trim().substring(2);
                 thirdCol = lineScanner.next().trim();
-                addressLong = Long.parseLong(address, SIXTEEN);
+                // addressLong = Long.parseLong(address, SIXTEEN);
             } catch (NoSuchElementException nse) {
                 System.err.println("Wrong number of fields in trace file!");
                 System.exit(1);
