@@ -131,14 +131,29 @@ public final class CacheSimulator {
                 System.exit(1);
             }
 
-            // Set mask for getting index.
-            long mask = (1 << indexLength) - 1;
-            long index = addressLong & mask;
+            // // Set mask for getting index.
+            // long mask = (1 << indexLength) - 1;
+            // long index = addressLong & mask;
 
-            // Flip mask bits to get mask for getting tag.
-            mask = ~mask;
-            long tag = (addressLong & mask);
-            tag >>= indexLength;
+            int offset = (int) (Math.log(bytesPerBlock) / Math.log(2));
+
+
+            // // Flip mask bits to get mask for getting tag.
+            // mask = ~mask;
+            // long tag = (addressLong & mask);
+            // tag >>= indexLength;
+
+            // Convert hex address to binary string
+            address = String.format("%32s",
+                Long.toBinaryString(Long.decode(address))).replace(' ', '0');
+            int cutoff = address.length() - offset;
+
+            // Extract set number
+            int index = (indexLength == 0) ? 0 : Integer.parseInt(address.substring(
+                cutoff - indexLength, cutoff), 2);
+            // Extract tag
+            int tag = Integer.parseInt(address.substring(0, cutoff - indexLength), 2);
+
 
             // Now, we have both the index and tag.
 
