@@ -87,8 +87,7 @@ public final class CacheSimulator {
 
         /**
          * Constructor for the CacheSlot class.
-         * @param index index of the address.
-         * @param tag tag of the address.
+         * @param t tag of the address.
          */
         CacheSlot(long t) {
             this.dirty = false;
@@ -179,8 +178,12 @@ public final class CacheSimulator {
      * @return index part of the address.
      */
     private int getIndex(String address, int cutoff) {
-        return (this.indexLength == 0) ? 0 : Integer.parseInt(address.substring(
-            cutoff - this.indexLength, cutoff), 2);
+        if (this.indexLength == 0) {
+            return 0;
+        } else {
+            return Integer.parseInt(address.substring(
+                        cutoff - this.indexLength, cutoff), 2);
+        }
     }
 
     /**
@@ -512,6 +515,7 @@ public final class CacheSimulator {
      * Used for write-allocate, write-through, lru.
      * It's easier for us to use these as boolean type than int.
      * @param s the argument to convert to boolean.
+     * @param argc the argument count for the input.
      * @return Boolean form of the input string.
      */
     private boolean stringToBool(String s, int argc) {
