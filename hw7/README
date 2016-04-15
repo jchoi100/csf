@@ -408,5 +408,22 @@ very different miss rates at different levels of caches.
 	write-allocate but no write-through, and it abides to LRU, run: 
 		> java CacheSimulator 256 4 16 1 0 1 gcc.trace
 
+5. Quick Explanation of Code:
+	For our implementation, we used a HashMap data structure to 
+simulate a cache. For the key, we used the index, and the value to
+each key is an ArrayList that simulates a queue like we talked about
+in class. In any case, we remove from the tail of the ArrayList when
+we need to evict and add to the front of the ArrayList when we need 
+to add. For LRU, whenever something gets touched, we move it to the
+front of the ArrayList in order to simulate the "LRU" heuristic.
+
+	Loading is taken care of by the same method for all types of
+configurations, and we deal with three different types of store 
+executions. (1. Write back, write allocate; 2. Write through, 
+write allocate; 3. Write through, no write allocate.)
+
+	When we parse the arguments in the beginning, we do all error
+checks on the inputs. So the program should exit if it finds an error.
+
 Thank you!
 *********************************************
