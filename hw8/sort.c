@@ -6,8 +6,6 @@
 
 #define NELEM(x)  (sizeof(x) / sizeof((x)[0]))
 
-void quicksort(int a[], int n);
-
 int tiny[] = {10};
 int random[] = {30, 40, 10, 20, 50, 60, -2, 70};
 int ascending[] = {10, 20, 30, 40, 50, 60};
@@ -58,6 +56,19 @@ int partition(int a[], int l, int u)
 	int t = a[l]; a[l] = a[j]; a[j] = t;
 	return j;
 }
+
+void realsort(int a[], int lo, int hi) {
+	if (lo < hi) {
+		int p = partition(a, lo, hi);
+		realsort(a, lo, p);
+		realsort(a, p + 1, hi);
+	}
+}
+
+void quicksort(int a[], int n) {
+	realsort(a, 0, n - 1);
+}
+
 
 void test(int a[], int n)
 {

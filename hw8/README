@@ -29,285 +29,365 @@ Moreover, before any type of procedure, we must push the original %ebp
 into the stack and move the current %esp into the %ebp.
 
 a. How functions access their parameters
-	Before a function call, in the caller, we push the parameters to be 
-	used into the stack in reverse order. For example, let's say we want
-	to call function f on parameters a, b, c, d, e. (i.e. f(a,b,c,d,e))
+    Before a function call, in the caller, we push the parameters to be 
+    used into the stack in reverse order. For example, let's say we want
+    to call function f on parameters a, b, c, d, e. (i.e. f(a,b,c,d,e))
 
-	ex)
-	The code looks like this (in somewhat pseudocode):
-		caller:
-			pushl %ebp
-			movl  %esp, %ebp
-			pushl %e
-			pushl %d
-			pushl %c
-			pushl %b
-			pushl %a
-			call f
-			(...)
-		f:
-			pushl %ebp
-			movl  %esp, %ebp
-			// Access saved parameters by using ebp offsets.
-			// How to do so is explained below.
-	Now, once in the callee function f, we can access the pushed args
-	by using %ebp offsets. Remember how we pushed the %esp into %ebp?
-	at 0(%ebp) lies %esp, at 4(%ebp) the return address to the caller.
+    ex)
+    The code looks like this (in somewhat pseudocode):
+        caller:
+            pushl %ebp
+            movl  %esp, %ebp
+            pushl %e
+            pushl %d
+            pushl %c
+            pushl %b
+            pushl %a
+            call f
+            (...)
+        f:
+            pushl %ebp
+            movl  %esp, %ebp
+            // Access saved parameters by using ebp offsets.
+            // How to do so is explained below.
+    Now, once in the callee function f, we can access the pushed args
+    by using %ebp offsets. Remember how we pushed the %esp into %ebp?
+    at 0(%ebp) lies %esp, at 4(%ebp) the return address to the caller.
 
-	The arguments lie here:
-		a:  8(%ebp)
-		b: 12(%ebp)
-		c: 16(%ebp)
-		d: 20(%ebp)
-		e: 24(%ebp)
-	If there are more than 5 arguments, the offsets will go 28, 32 ...
+    The arguments lie here:
+        a:  8(%ebp)
+        b: 12(%ebp)
+        c: 16(%ebp)
+        d: 20(%ebp)
+        e: 24(%ebp)
+    If there are more than 5 arguments, the offsets will go 28, 32 ...
 
 b. How functions returns their results
-	The result of a function is always assumed to be saved at %eax.
-	It does not matter that intermediate computation results do not
-	get saved at %eax, but the final result must be at %eax before
-	we leave the function call.
+    The result of a function is always assumed to be saved at %eax.
+    It does not matter that intermediate computation results do not
+    get saved at %eax, but the final result must be at %eax before
+    we leave the function call.
 
-	As an example, we show a short function that adds two numbers.
-	(Note that not all the required contents are in this example.
-	 We just show the necessary code to show an example of how 
-	 function results are saved in the %eax register.)
+    As an example, we show a short function that adds two numbers.
+    (Note that not all the required contents are in this example.
+     We just show the necessary code to show an example of how 
+     function results are saved in the %eax register.)
 
-	ex) 
-		.text
-		.globl plus
-		.globl main
-	plus:
-		pushl %ebp                  # save the old ebp
-		movl  %esp, %ebp			# put %esp into %ebp
-		movl  8(%ebp), %edx			# get the 1st arg, 37, into %edx
-		movl  12(%ebp), %eax		# get the 2nd arg, 10, into %eax
-		addl  %edx, %eax			# %eax <- %eax + %edx
-		popl  %ebp					# restore the old ebp
-		ret 						# return
-	main:
-		pushl %ebp                  # save the old ebp
-		movl  %esp, %ebp			# put %esp into %ebp
-		pushl $10					# push second arg
-		pushl $37					# push first arg
-		call  plus					# call function plus
-		addl  $8, %esp				# free up 37 and 10
-		leave
-		ret
-
-
-	Using the previous example, we show what happens in the stack
-	upto entering plus from main.
-
-	      Stack
-	|               |
-	+---------------+
-	| ra in startup |  <----- esp once entering main
-	+---------------+
-	|    old ebp    | 
-	+---------------+
-	|      10       |  <----- with pushl $10
-	+---------------+
-	|      37       |  <----- with pushl $37
-	+---------------+
-	|  ra in main   |  <----- esp once entering plus
-	+---------------+
-	|      ebp      |  <----- points to old ebp above
-	+---------------+
-	|               |
-	+---------------+
-	|               |
+    ex) 
+        .text
+        .globl plus
+        .globl main
+    plus:
+        pushl %ebp                  # save the old ebp
+        movl  %esp, %ebp            # put %esp into %ebp
+        movl  8(%ebp), %edx         # get the 1st arg, 37, into %edx
+        movl  12(%ebp), %eax        # get the 2nd arg, 10, into %eax
+        addl  %edx, %eax            # %eax <- %eax + %edx
+        popl  %ebp                  # restore the old ebp
+        ret                         # return
+    main:
+        pushl %ebp                  # save the old ebp
+        movl  %esp, %ebp            # put %esp into %ebp
+        pushl $10                   # push second arg
+        pushl $37                   # push first arg
+        call  plus                  # call function plus
+        addl  $8, %esp              # free up 37 and 10
+        leave
+        ret
 
 
-	Now, we show step-by-step what happens when exiting plus.
+    Using the previous example, we show what happens in the stack
+    upto entering plus from main.
 
-	popl %ebp
-	      Stack
-	|               |
-	+---------------+
-	| ra in startup |  <----- esp once entering main
-	+---------------+
-	|    old ebp    |
-	+---------------+
-	|      10       |
-	+---------------+
-	|      37       |
-	+---------------+
-	|  ra in main   |  <----- esp once entering plus
-	+---------------+
-	|               |
-	+---------------+
-	|               |
-	+---------------+
-	|               |
+          Stack
+    |               |
+    +---------------+
+    | ra in startup |  <----- esp once entering main
+    +---------------+
+    |    old ebp    | 
+    +---------------+
+    |      10       |  <----- with pushl $10
+    +---------------+
+    |      37       |  <----- with pushl $37
+    +---------------+
+    |  ra in main   |  <----- esp once entering plus
+    +---------------+
+    |      ebp      |  <----- points to old ebp above
+    +---------------+
+    |               |
+    +---------------+
+    |               |
 
-	ret (in plus)
-	addl $8, %esp
 
-	      Stack
-	|               |
-	+---------------+
-	| ra in startup |  <----- esp once entering main
-	+---------------+
-	|    old ebp    |
-	+---------------+
-	|      10       |  <----- esp: freeing up space from here
-	+---------------+              and below.
-	|      37       |
-	+---------------+
-	|  ra in main   |  
-	+---------------+
-	|               |
-	+---------------+
-	|               |
-	+---------------+
-	|               |
+    Now, we show step-by-step what happens when exiting plus.
 
-	leave (in main)
-		- the esp <- ebp protion of leave
-	      Stack
-	|               |
-	+---------------+
-	| ra in startup |  <----- esp once entering main
-	+---------------+
-	|    old ebp    |  <----- esp
-	+---------------+
-	|      10       |
-	+---------------+ 
-	|      37       |
-	+---------------+
-	|  ra in main   |  
-	+---------------+
-	|               |
-	+---------------+
-	|               |
-	+---------------+
-	|               |
 
-	leave (in main)
-		- the pop ebp protion of leave
-	      Stack
-	|               |
-	+---------------+
-	| ra in startup |  <----- esp
-	+---------------+
-	|    old ebp    |
-	+---------------+
-	|      10       |
-	+---------------+ 
-	|      37       |
-	+---------------+
-	|  ra in main   |  
-	+---------------+
-	|               |
-	+---------------+
-	|               |
-	+---------------+
-	|               |
+    popl %ebp
+          Stack
+    |               |
+    +---------------+
+    | ra in startup |  <----- esp once entering main
+    +---------------+
+    |    old ebp    |
+    +---------------+
+    |      10       |
+    +---------------+
+    |      37       |
+    +---------------+
+    |  ra in main   |  <----- esp once entering plus
+    +---------------+
+    |               |
+    +---------------+
+    |               |
+    +---------------+
+    |               |
 
-	How a function uses local or global variables is explained below.
+
+    ret (in plus)
+    addl $8, %esp
+
+          Stack
+    |               |
+    +---------------+
+    | ra in startup |  <----- esp once entering main
+    +---------------+
+    |    old ebp    |
+    +---------------+
+    |      10       |  <----- esp: freeing up space from here
+    +---------------+              and below.
+    |      37       |
+    +---------------+
+    |  ra in main   |  
+    +---------------+
+    |               |
+    +---------------+
+    |               |
+    +---------------+
+    |               |
+
+
+    leave (in main)
+        - the esp <- ebp protion of leave
+          Stack
+    |               |
+    +---------------+
+    | ra in startup |  <----- esp once entering main
+    +---------------+
+    |    old ebp    |  <----- esp
+    +---------------+
+    |      10       |
+    +---------------+ 
+    |      37       |
+    +---------------+
+    |  ra in main   |  
+    +---------------+
+    |               |
+    +---------------+
+    |               |
+    +---------------+
+    |               |
+
+
+    leave (in main)
+        - the pop ebp protion of leave
+          Stack
+    |               |
+    +---------------+
+    | ra in startup |  <----- esp
+    +---------------+
+    |    old ebp    |
+    +---------------+
+    |      10       |
+    +---------------+ 
+    |      37       |
+    +---------------+
+    |  ra in main   |  
+    +---------------+
+    |               |
+    +---------------+
+    |               |
+    +---------------+
+    |               |
+
+    How a function uses local or global variables is explained below.
 ------------------------------------------------------------------------
 2) Local vs Global Variables
 
 a. Local Variables
 
-	Say we have a simple C program with a function that adds two numbers.
-	Instead of directly returning the sum of the two arguments, let's
-	first save the result in a local variable and return that variable.
+    Say we have a simple C program with a function that adds two numbers.
+    Instead of directly returning the sum of the two arguments, let's
+    first save the result in a local variable and return that variable.
 
-	<local.c>
-	int plus(int a, int b) {
-	  int c = a + b;
-	  return c;
-	}
+    <local.c>
+    int plus(int a, int b) {
+      int c = a + b;
+      return c;
+    }
 
-	int main(void) {
-	  return plus(37, 10);
-	}
+    int main(void) {
+      return plus(37, 10);
+    }
 
-	Notice that "int c" is our local variable in the function plus().
-	This is how the .s file looks like for local.c.
+    Notice that "int c" is our local variable in the function plus().
+    This is how the .s file looks like for local.c.
 
-	<local.s>
-		.text
-		.globl	plus
-	plus:
-		pushl	%ebp
-		movl	%esp, %ebp
-		subl	$16, %esp
-		movl	8(%ebp), %edx
-		movl	12(%ebp), %eax
-		addl	%edx, %eax
-		movl	%eax, -4(%ebp)
-		movl	-4(%ebp), %eax
-		leave
-		ret
+    <local.s>
+        .text
+        .globl  plus
+    plus:
+        pushl   %ebp
+        movl    %esp, %ebp
+        subl    $16, %esp
+        movl    8(%ebp), %edx
+        movl    12(%ebp), %eax
+        addl    %edx, %eax
+        movl    %eax, -4(%ebp)
+        movl    -4(%ebp), %eax
+        leave
+        ret
 
-		.globl	main
-	main:
-		pushl	%ebp
-		movl	%esp, %ebp
-		pushl	$10
-		pushl	$37
-		call	plus
-		addl	$8, %esp
-		leave
-		ret
+        .globl  main
+    main:
+        pushl   %ebp
+        movl    %esp, %ebp
+        pushl   $10
+        pushl   $37
+        call    plus
+        addl    $8, %esp
+        leave
+        ret
 
-	As usual, main saves the original %ebp in the stack and moves
-	%esp into %ebp. Then it pushes the two arguments to plus() in
-	reverse order. Then it calls plus(). Function plus() also
-	pushes the %ebp to stack and moves %esp to %ebp. Here is where
-	it gets interesting.
+    As usual, main saves the original %ebp in the stack and moves
+    %esp into %ebp. Then it pushes the two arguments to plus() in
+    reverse order. Then it calls plus(). Function plus() also
+    pushes the %ebp to stack and moves %esp to %ebp. Here is where
+    it gets interesting.
 
-	Notice, after plus does the regular stack business, it also 
-	subtracts 16 from the stack pointer. What it is doing here is
-	making some space for our local variable to fit into.
-	(Number 16 here is a system number chosen by Intel, and in our
-	case, we only need 4 to save int c.)
+    Notice, after plus does the regular stack business, it also 
+    subtracts 16 from the stack pointer. What it is doing here is
+    making some space for our local variable to fit into.
+    (Number 16 here is a system number chosen by Intel, and in our
+    case, we only need 4 to save int c.)
 
-	Then, as usual, we bring in the first argument into %edx,
-	the second argument into %eax, add the two and save the result
-	in %eax. Then, it takes the result we have in %eax and puts it
-	-4 offsets from %ebp. The -4(%ebp) represents our "int c"!
-	And the next line moves what is in "int c" (= -4(%ebp)) and
-	puts it back to the %eax register since function results
-	must go into that register.
+    Then, as usual, we bring in the first argument into %edx,
+    the second argument into %eax, add the two and save the result
+    in %eax. Then, it takes the result we have in %eax and puts it
+    -4 offsets from %ebp. The -4(%ebp) represents our "int c"!
+    And the next line moves what is in "int c" (= -4(%ebp)) and
+    puts it back to the %eax register since function results
+    must go into that register.
 
 
 b. Global Variables
-	In x86, we can declare static data regions. Data declarations should
-	be preceded by the .data directive. Let's say we have a C program
-	like the following.
+    In x86, we can declare static data regions. Data declarations should
+    be preceded by the .data directive. Let's say we have a C program
+    like the following.
 
-	<donothing.c>
-		int a = 37;
-		int b = 10;
-		int main(void) {
-			return a + b;
-		}
+    <donothing.c>
+        int a = 37;
+        int b = 10;
+        int main(void) {
+            return a + b;
+        }
 
-	Then the donothing.s file will look like this.
-	We will just show the first few lines of the code where the
-	variables a and b are defined.
+    Then the donothing.s file will look like this.
+    We will just show the first few lines of the code where the
+    variables a and b are defined.
 
-	<donothing.s>
-			.globl a
-			.data
-			.align 4
-		a:
-			.long 37
-			.globl b
-			.align 4
-		b:
-			.long 10
+    <donothing.s>
+            .globl a
+            .data
+            .align 4
+        a:
+            .long 37
+            .globl b
+            .align 4
+        b:
+            .long 10
 
-	Notice how the names a and b first show up with the .globl directive.
-	Then, after the .data directive we align with 4 (just an x86 thing)
-	and declare the data a: and b:.
+    Notice how the names a and b first show up with the .globl directive.
+    Then, after the .data directive we align with 4 (just an x86 thing)
+    and declare the data a: and b:.
 
 ------------------------------------------------------------------------
 3) Arrays
+
+We can declare global arrays as .globl, and this would make each symbol
+in the array global as well. For instance, let's say we have an array of
+size 5 that holds numbers from 1 to 5. Then we have something like:
+
+    .globl ary
+ary:
+    .long 1
+    .long 2
+    .long 3
+    .long 4
+    .long 5
+
+Inside memory, it will look like this:
+
+          Memory
+    |               |
+    +---------------+
+    |       5       |  <----- ary + 16
+    +---------------+
+    |       4       |  <----- ary + 12
+    +---------------+
+    |       3       |  <----- ary + 8
+    +---------------+ 
+    |       2       |  <----- ary + 4
+    +---------------+
+    |       1       |  <----- ary
+    +---------------+
+    |               |
+
+The way we access each element in the array is by using the offset
+with respect to the first element of the array.
+
+For instance, say we want to move the second element into %eax.
+Then we do something like:
+
+    movl ary+4, %eax
+
+For instance, say we want to write a 20 to the 4th element in ary.
+Then we do something like:
+
+    movl $20, ary+12
+
+Now, we explain how to pass arrays into functions as an agrument.
+Just as we did before, we need to push the arguments into the stack
+before actually calling the function. But what do we push in the case
+of arrays? The answer is the immediate value of the address of the
+first element of the array.
+
+For instance, say we want to call function f on ary and n.
+In other words, we want to do f(ary, n).
+
+The stack would have to look like this at the moment we enter f.
+
+          Stack
+    |               |                        |   5   | ary+16
+    +---------------+                        |   4   | ary+12
+    |       n       |                        |   3   | ary+8
+    +---------------+                        |   2   | ary+4
+    |  ary address  |----------------------> |   1   | ary
+    +---------------+
+    |               |  <----- esp
+    +---------------+ 
+    |               |
+
+For instance, say we want to move the 4th element in ary to %eax.
+We need to do:
+    movl 4(%esp), %eax
+    addl $12, %eax
+    movl (%eax), %eax
+
+For instance, say we want to write 17 to the 3rd element in ary.
+We need to do:
+    movl 4(%esp), %eax
+    addl $8, %eax
+    movl $3, (%eax)
 
 
 ========================================================================

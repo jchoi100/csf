@@ -21,5 +21,27 @@
 
 	.text
 	.globl	quicksort
+    .globl  qswrapper
+
 quicksort:
+    pushl %ebp
+    movl  %esp, %ebp
+    pushl %ebx
+
+
+
+
+    leave
 	ret
+
+
+qswrapper:
+    pushl %ebp
+    movl  %esp, %ebp
+    pushl %ebx
+
+
+
+
+    leave
+    ret
