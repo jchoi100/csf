@@ -23,3 +23,6 @@ clean:
 
 archive:
 	tar zcvf x86.tar.gz sort.c quick.S cat.c Makefile
+
+submission:
+	tar cvzf cs233-assignment-8-jchoi100.tar.gz Makefile sort.c cat.c quick.S
