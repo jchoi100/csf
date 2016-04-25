@@ -170,8 +170,8 @@ partition:
 	movl	12(%ebp), %eax
 	cmpl	16(%ebp), %eax
 	jl	.L13
-	pushl	$__PRETTY_FUNCTION__.1862
-	pushl	$40
+	pushl	$__PRETTY_FUNCTION__.1859
+	pushl	$38
 	pushl	$.LC3
 	pushl	$.LC4
 	call	__assert_fail
@@ -277,10 +277,81 @@ partition:
 	.cfi_endproc
 .LFE2:
 	.size	partition, .-partition
+	.globl	realsort
+	.type	realsort, @function
+realsort:
+.LFB3:
+	.cfi_startproc
+	pushl	%ebp
+	.cfi_def_cfa_offset 8
+	.cfi_offset 5, -8
+	movl	%esp, %ebp
+	.cfi_def_cfa_register 5
+	subl	$24, %esp
+	movl	12(%ebp), %eax
+	cmpl	16(%ebp), %eax
+	jge	.L25
+	subl	$4, %esp
+	pushl	16(%ebp)
+	pushl	12(%ebp)
+	pushl	8(%ebp)
+	call	partition
+	addl	$16, %esp
+	movl	%eax, -12(%ebp)
+	subl	$4, %esp
+	pushl	-12(%ebp)
+	pushl	12(%ebp)
+	pushl	8(%ebp)
+	call	realsort
+	addl	$16, %esp
+	movl	-12(%ebp), %eax
+	addl	$1, %eax
+	subl	$4, %esp
+	pushl	16(%ebp)
+	pushl	%eax
+	pushl	8(%ebp)
+	call	realsort
+	addl	$16, %esp
+.L25:
+	nop
+	leave
+	.cfi_restore 5
+	.cfi_def_cfa 4, 4
+	ret
+	.cfi_endproc
+.LFE3:
+	.size	realsort, .-realsort
+	.globl	quicksort
+	.type	quicksort, @function
+quicksort:
+.LFB4:
+	.cfi_startproc
+	pushl	%ebp
+	.cfi_def_cfa_offset 8
+	.cfi_offset 5, -8
+	movl	%esp, %ebp
+	.cfi_def_cfa_register 5
+	subl	$8, %esp
+	movl	12(%ebp), %eax
+	subl	$1, %eax
+	subl	$4, %esp
+	pushl	%eax
+	pushl	$0
+	pushl	8(%ebp)
+	call	realsort
+	addl	$16, %esp
+	nop
+	leave
+	.cfi_restore 5
+	.cfi_def_cfa 4, 4
+	ret
+	.cfi_endproc
+.LFE4:
+	.size	quicksort, .-quicksort
 	.globl	test
 	.type	test, @function
 test:
-.LFB3:
+.LFB5:
 	.cfi_startproc
 	pushl	%ebp
 	.cfi_def_cfa_offset 8
@@ -313,12 +384,12 @@ test:
 	.cfi_def_cfa 4, 4
 	ret
 	.cfi_endproc
-.LFE3:
+.LFE5:
 	.size	test, .-test
 	.globl	main
 	.type	main, @function
 main:
-.LFB4:
+.LFB6:
 	.cfi_startproc
 	leal	4(%esp), %ecx
 	.cfi_def_cfa 1, 0
@@ -359,13 +430,13 @@ main:
 	.cfi_def_cfa 4, 4
 	ret
 	.cfi_endproc
-.LFE4:
+.LFE6:
 	.size	main, .-main
 	.section	.rodata
 	.align 4
-	.type	__PRETTY_FUNCTION__.1862, @object
-	.size	__PRETTY_FUNCTION__.1862, 10
-__PRETTY_FUNCTION__.1862:
+	.type	__PRETTY_FUNCTION__.1859, @object
+	.size	__PRETTY_FUNCTION__.1859, 10
+__PRETTY_FUNCTION__.1859:
 	.string	"partition"
 	.ident	"GCC: (GNU) 5.3.1 20151207 (Red Hat 5.3.1-2)"
 	.section	.note.GNU-stack,"",@progbits

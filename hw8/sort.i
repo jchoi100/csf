@@ -975,8 +975,6 @@ extern size_t wcstombs (char *__restrict __s,
 
 
 # 9 "sort.c"
-void quicksort(int a[], int n);
-
 int tiny[] = {10};
 int random[] = {30, 40, 10, 20, 50, 60, -2, 70};
 int ascending[] = {10, 20, 30, 40, 50, 60};
@@ -1007,17 +1005,17 @@ void print(int a[], int n)
 int partition(int a[], int l, int u)
 {
  
-# 40 "sort.c" 3 4
+# 38 "sort.c" 3 4
 ((
-# 40 "sort.c"
+# 38 "sort.c"
 l < u
-# 40 "sort.c" 3 4
+# 38 "sort.c" 3 4
 ) ? (void) (0) : __assert_fail (
-# 40 "sort.c"
+# 38 "sort.c"
 "l < u"
-# 40 "sort.c" 3 4
-, "sort.c", 40, __PRETTY_FUNCTION__))
-# 40 "sort.c"
+# 38 "sort.c" 3 4
+, "sort.c", 38, __PRETTY_FUNCTION__))
+# 38 "sort.c"
              ;
 
  int p = a[l];
@@ -1040,6 +1038,19 @@ l < u
  return j;
 }
 
+void realsort(int a[], int lo, int hi) {
+ if (lo < hi) {
+  int p = partition(a, lo, hi);
+  realsort(a, lo, p);
+  realsort(a, p + 1, hi);
+ }
+}
+
+void quicksort(int a[], int n) {
+ realsort(a, 0, n - 1);
+}
+
+
 void test(int a[], int n)
 {
  print(a, n);
@@ -1056,8 +1067,8 @@ int main(void)
  test(descending, (sizeof(descending) / sizeof((descending)[0])));
 
  return 
-# 77 "sort.c" 3 4
+# 88 "sort.c" 3 4
        0
-# 77 "sort.c"
+# 88 "sort.c"
                    ;
 }
