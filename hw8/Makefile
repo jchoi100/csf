@@ -9,9 +9,12 @@ ASFLAGS=-m32
 all: sort cat
 
 sort: sort.o quick.o
+
 cat: cat.S
+
 mcat: mcat.S
 	$(CC) -m32 $^ -o $@
+
 qcat: qcat.S
 	$(CC) -m32 -nostdlib $^ -o $@
 
