@@ -211,6 +211,68 @@ b. How functions returns their results
 
 a. Local Variables
 
+	Say we have a simple C program with a function that adds two numbers.
+	Instead of directly returning the sum of the two arguments, let's
+	first save the result in a local variable and return that variable.
+
+	<local.c>
+	int plus(int a, int b) {
+	  int c = a + b;
+	  return c;
+	}
+
+	int main(void) {
+	  return plus(37, 10);
+	}
+
+	Notice that "int c" is our local variable in the function plus().
+	This is how the .s file looks like for local.c.
+
+	<local.s>
+		.text
+		.globl	plus
+	plus:
+		pushl	%ebp
+		movl	%esp, %ebp
+		subl	$16, %esp
+		movl	8(%ebp), %edx
+		movl	12(%ebp), %eax
+		addl	%edx, %eax
+		movl	%eax, -4(%ebp)
+		movl	-4(%ebp), %eax
+		leave
+		ret
+
+		.globl	main
+	main:
+		pushl	%ebp
+		movl	%esp, %ebp
+		pushl	$10
+		pushl	$37
+		call	plus
+		addl	$8, %esp
+		leave
+		ret
+
+	As usual, main saves the original %ebp in the stack and moves
+	%esp into %ebp. Then it pushes the two arguments to plus() in
+	reverse order. Then it calls plus(). Function plus() also
+	pushes the %ebp to stack and moves %esp to %ebp. Here is where
+	it gets interesting.
+
+	Notice, after plus does the regular stack business, it also 
+	subtracts 16 from the stack pointer. What it is doing here is
+	making some space for our local variable to fit into.
+	(Number 16 here is a system number chosen by Intel, and in our
+	case, we only need 4 to save int c.)
+
+	Then, as usual, we bring in the first argument into %edx,
+	the second argument into %eax, add the two and save the result
+	in %eax. Then, it takes the result we have in %eax and puts it
+	-4 offsets from %ebp. The -4(%ebp) represents our "int c"!
+	And the next line moves what is in "int c" (= -4(%ebp)) and
+	puts it back to the %eax register since function results
+	must go into that register.
 
 
 b. Global Variables
