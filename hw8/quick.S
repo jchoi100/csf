@@ -21,7 +21,7 @@
 
 	.text
 	.globl	quicksort
-    .globl  qswrapper
+    .globl  realsort
 
 quicksort:
     pushl %ebp
@@ -35,7 +35,7 @@ quicksort:
 	ret
 
 
-qswrapper:
+realsort:
     pushl %ebp
     movl  %esp, %ebp
     pushl %ebx
