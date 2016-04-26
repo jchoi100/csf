@@ -37,7 +37,8 @@ void print(int a[], int n)
 
 int partition(int a[], int l, int u)
 {
-  	assert(l < u);
+  printf("l: %d, u: %d\n", l, u);
+        assert(l < u);
 
 	int p = a[l];
 	int i = l + 1;
@@ -82,10 +83,10 @@ void test(int a[], int n)
 
 int main(void)
 {
-	test(tiny, NELEM(tiny));
+  //test(tiny, NELEM(tiny));
 	test(random, NELEM(random));
-	test(ascending, NELEM(ascending));
-	test(descending, NELEM(descending));
+	//test(ascending, NELEM(ascending));
+	//test(descending, NELEM(descending));
 
 	return EXIT_SUCCESS;
 }
