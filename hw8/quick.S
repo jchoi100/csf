@@ -28,7 +28,7 @@ realsort:
     movl  %esp, %ebp          # move esp to ebp
     movl  12(%ebp), %eax      # move lo into eax
     cmpl  %eax, 16(%ebp)      # compare lo, hi
-    jle ELSE1                 # end if hi <= lo
+    jle ELSE1                  # end if hi <= lo
     subl  $4, %esp            # leave space for int p
     pushl 16(%ebp)            # 3rd arg: hi
     pushl 12(%ebp)            # 2nd arg: lo
@@ -43,7 +43,7 @@ realsort:
     addl  $12, %esp           # move esp 12 up
     pushl 16(%ebp)            # 3rd arg: hi
     addl  $1, -4(%ebp)        # p++
-    pushl %eax                # 2nd arg: p + 1
+    pushl -4(%ebp)                # 2nd arg: p + 1
     pushl  8(%ebp)            # 1st arg: a[]
     call  realsort            # call realsort on a, p + 1, hi
     addl  $12, %esp           # move esp 12 up
