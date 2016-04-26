@@ -1,3 +1,11 @@
+# 600.233 Computer System Fundamentals
+# Assignment 8
+# Dodge the x86!
+# Name: Joon Hyuck Choi
+# JHED: jchoi100
+# email: jchoi100@jhu.edu
+# quick.S
+
 # Write the quicksort function in i386 assembly. Write it
 # FROM SCRATCH please, DON'T write it in C first and then
 # copy the compiler's assembly here. We'll know...
