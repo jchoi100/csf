@@ -37,7 +37,7 @@ void print(int a[], int n)
 
 int partition(int a[], int l, int u)
 {
-	assert(l < u);
+  	assert(l < u);
 
 	int p = a[l];
 	int i = l + 1;

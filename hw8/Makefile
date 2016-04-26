@@ -8,8 +8,8 @@ ASFLAGS=-m32
 
 all: sort cat
 
-# sort: sort.o quick.o
-sort: sort.o
+sort: sort.o quick.o
+# sort: sort.o
 
 cat: cat.S
 
