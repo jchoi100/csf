@@ -6,32 +6,25 @@
 # email: jchoi100@jhu.edu
 # qcat.S
 
-EOF -1
-ZERO 0
-SYS_EXIT 1
-SYS_READ 3
-SYS_WRTE 4
-BUF_SIZE 128
-
     .bss
-    .lcomm buffer, BUF_SIZE
+    .lcomm buffer, 128
     .text
     .globl  _start
 _start:
     movl    $buffer, %ecx
     jmp GETEXIT                     # putchar
 LOOP:                            
-    movl    $SYS_WRTE, %eax
+    movl    $4, %eax
     movl    $1, %ebx
-    movl    $BUF_SIZE, %edx
+    movl    $128, %edx
     int     $0x80
 GETEXIT:                           # getchar
-    movl    $SYS_READ, %eax
+    movl    $3, %eax
     movl    $0, %ebx
-    movl    $BUF_SIZE , %edx
+    movl    $128, %edx
     int     $0x80
-    cmpl    $EOF, %eax     # Compare EOF(-1) with getchar result.
+    cmpl    $-1, %eax     # Compare EOF(-1) with getchar result.
     jne LOOP                    # if result neq -1, jump to LOOP
-    movl    $SYS_EXIT, %eax
-    movl    $ZERO, %ebx         # if result eq -1: move 0 into %eax.
+    movl    $1, %eax
+    movl    $0, %ebx         # if result eq -1: move 0 into %eax.
     int     $0x80
