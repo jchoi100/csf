@@ -2,7 +2,7 @@
 # needed, but it shouldn't hurt either. I hope. If you get some
 # kind of error message about -m32, best to ask on Piazza.
 
-CFLAGS=-std=c11 -pedantic -Wall -Wextra -O3 -save-temps -m32
+CFLAGS=-std=c11 -pedantic -Wall -Wextra -O0 -save-temps -m32
 LDFLAGS=-m32
 ASFLAGS=-m32
 
