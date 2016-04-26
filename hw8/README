@@ -6,13 +6,11 @@ JHED: jchoi100
 email: jchoi100@jhu.edu
 README
 
-------------------------------------------------------------------------
-
 ========================================================================
 Problem 1: Learning x86 Assembly
 ========================================================================
 Welcome to a short x86 Tutorial!
-In this tutorial, we will explain to you mainly three concepts in x86.
+In this tutorial, we will explain to mainly three concepts in x86.
 
 1) Functions
 2) Local vs Global variables
@@ -23,31 +21,37 @@ Let Start!
 ------------------------------------------------------------------------
 1) Functions
 
-Before we call a function, we must prepare the stack and registers for
-use within the function. After the function is over, we must restore
-the stack and registers to the state they were before it was called.
+Before we call a function, we must prepare the stack and registers 
+for use within the function. After the function is over, we must 
+restore the stack and registers to the state they were before it was
+called.
 
-Moreover, before any type of procedure, we must push the original %ebp
-into the stack and move the current %esp into the %ebp.
+Moreover, before any type of procedure, we must push the original 
+%ebp into the stack and move the current %esp into the %ebp.
 
 This procedure is what allows each subroutine to act independently of
-its location on the stack and think as if it is at the top of the stack.
+its location on the stack and think as if it is at the top of the 
+stack.
 
 When we call a function, a new stack frame is created at the current
 esp location. Anything that had to do with previous function calls
-are above the stack in this frame, so nothing there should be modified.
+are above the stack in this frame, so nothing there should be
+modified.
 
+In other words, this procedure gives a function call its own stack space.
 
 a. How functions access their parameters
-    Before a function call, in the caller, we push the parameters to be 
-    used into the stack in reverse order. For example, let's say we want
-    to call function f on parameters a, b, c, d, e. (i.e. f(a,b,c,d,e))
+    Before a function call, in the caller, we push the parameters to 
+    be used into the stack in reverse order. For example, let's say
+    we want to call function f on parameters a, b, c, d, e. 
+    (i.e. f(a,b,c,d,e))
+    In the caller, we must push e first, then d, then c, b, a.
+    Then we make a call to f.
 
     ex)
-    The code looks like this (in somewhat pseudocode):
+    The code looks like this (with some details omitted):
         caller:
-            pushl %ebp
-            movl  %esp, %ebp
+            (...)
             pushl %e
             pushl %d
             pushl %c
@@ -60,17 +64,19 @@ a. How functions access their parameters
             movl  %esp, %ebp
             // Access saved parameters by using ebp offsets.
             // How to do so is explained below.
+
     Now, once in the callee function f, we can access the pushed args
     by using %ebp offsets. Remember how we pushed the %esp into %ebp?
-    at 0(%ebp) lies %esp, at 4(%ebp) the return address to the caller.
+    At 0(%ebp) lies %esp, at 4(%ebp) the return address to the caller.
 
-    The arguments lie here:
+    The arguments a,b,c,d,e lie here:
         a:  8(%ebp)
         b: 12(%ebp)
         c: 16(%ebp)
         d: 20(%ebp)
         e: 24(%ebp)
-    If there are more than 5 arguments, the offsets will go 28, 32 ...
+    If there are more than 5 arguments, then the offsets will 
+    continue 28, 32, 36, ...
 
 To give a quick sketch of the stack when f(10, 5) is called:
 
@@ -79,11 +85,11 @@ To give a quick sketch of the stack when f(10, 5) is called:
     +---------------+
     |       10      |  <----- 12(%ebp)
     +---------------+
-    |       5       |  <-----  8(%ebp)
+    |        5      |  <-----  8(%ebp)
     +---------------+
-    |       RA      |  <----- return address
+    |       RA      |  <----- return address to caller
     +---------------+
-    |      ebp      |  <----- old ebp value
+    |               |  <----- f will start putting things here.
     +---------------+
     |               |  
 
@@ -118,7 +124,7 @@ b. How functions returns their results
         call  plus                  # call function plus
         addl  $8, %esp              # free up 37 and 10
         leave
-        ret
+        ret                         # result of plus is in %eax
 
 
     Using the previous example, we show what happens in the stack
@@ -129,7 +135,7 @@ b. How functions returns their results
     +---------------+
     | ra in startup |  <----- esp once entering main
     +---------------+
-    |    old ebp    | 
+    |    old ebp    |
     +---------------+
     |      10       |  <----- with pushl $10
     +---------------+
@@ -147,7 +153,8 @@ b. How functions returns their results
     Now, we show step-by-step what happens when exiting plus.
 
 
-    popl %ebp
+    > popl %ebp
+
           Stack
     |               |
     +---------------+
@@ -159,7 +166,7 @@ b. How functions returns their results
     +---------------+
     |      37       |
     +---------------+
-    |  ra in main   |  <----- esp once entering plus
+    |  ra in main   |  <----- esp
     +---------------+
     |               |
     +---------------+
@@ -168,21 +175,21 @@ b. How functions returns their results
     |               |
 
 
-    ret (in plus)
-    addl $8, %esp
+    > ret (in plus)
+    > addl $8, %esp (in main)
 
           Stack
     |               |
     +---------------+
     | ra in startup |  <----- esp once entering main
     +---------------+
-    |    old ebp    |
+    |    old ebp    |  <----- esp: freeing up space below.
     +---------------+
-    |      10       |  <----- esp: freeing up space from here
-    +---------------+              and below.
+    |      10       |
+    +---------------+
     |      37       |
     +---------------+
-    |  ra in main   |  
+    |  ra in main   |
     +---------------+
     |               |
     +---------------+
@@ -191,8 +198,9 @@ b. How functions returns their results
     |               |
 
 
-    leave (in main)
+    > leave (in main)
         - the esp <- ebp protion of leave
+          
           Stack
     |               |
     +---------------+
@@ -201,10 +209,10 @@ b. How functions returns their results
     |    old ebp    |  <----- esp
     +---------------+
     |      10       |
-    +---------------+ 
+    +---------------+
     |      37       |
     +---------------+
-    |  ra in main   |  
+    |  ra in main   |
     +---------------+
     |               |
     +---------------+
@@ -213,8 +221,9 @@ b. How functions returns their results
     |               |
 
 
-    leave (in main)
+    > leave (in main)
         - the pop ebp protion of leave
+      
           Stack
     |               |
     +---------------+
@@ -238,11 +247,15 @@ b. How functions returns their results
 ------------------------------------------------------------------------
 2) Local vs Global Variables
 
+We explain the two concepts by using example programs.
+Relevant information is given while walking through the examples.
+
 a. Local Variables
 
-    Say we have a simple C program with a function that adds two numbers.
-    Instead of directly returning the sum of the two arguments, let's
-    first save the result in a local variable and return that variable.
+    Say we have a simple C program with a function that adds two
+    numbers. Instead of directly returning the sum of the two
+    arguments, let's first save the result in a local variable and 
+    return that variable.
 
     <local.c>
     int plus(int a, int b) {
@@ -258,6 +271,7 @@ a. Local Variables
     This is how the .s file looks like for local.c.
 
     <local.s>
+
         .text
         .globl  plus
     plus:
@@ -283,6 +297,8 @@ a. Local Variables
         leave
         ret
 
+    Explanation:
+
     As usual, main saves the original %ebp in the stack and moves
     %esp into %ebp. Then it pushes the two arguments to plus() in
     reverse order. Then it calls plus(). Function plus() also
@@ -292,6 +308,8 @@ a. Local Variables
     Notice, after plus does the regular stack business, it also 
     subtracts 16 from the stack pointer. What it is doing here is
     making some space for our local variable to fit into.
+    What is contained in these spaces is not important since we
+    will be manually putting things into these spaces.
     (Number 16 here is a system number chosen by Intel, and in our
     case, we only need 4 to save int c.)
 
@@ -303,11 +321,37 @@ a. Local Variables
     puts it back to the %eax register since function results
     must go into that register.
 
+    Functions save their local variables right below each of its
+    frame pointer. 
+    To give a sketch of the plus function above:
+
+          Stack
+    |               |
+    +---------------+
+    |       10      |  <----- 2nd argument: 12(%ebp)
+    +---------------+
+    |       37      |  <----- 1st argument: 8(%ebp)
+    +---------------+
+    |       RA      |  <----- return address to main
+    +---------------+
+    |      ebp      |  <----- old ebp value
+    +---------------+
+    |   local var   |  <----- 1st local variable: -4(%ebp)
+    +---------------+
+    |   local var   |  <----- 2nd local variable: -8(%ebp)
+    +---------------+
+    |   local var   |  <----- 3rd local variable: -12(%ebp)
+    +---------------+
+    |   local var   |  <----- 4th local variable: -16(%ebp)
+
+    In the assembly code above, space upto the fourth local variable
+    is reserved. We only use the first slot -4(%ebp) for "int c".
 
 b. Global Variables
-    In x86, we can declare static data regions. Data declarations should
-    be preceded by the .data directive. Let's say we have a C program
-    like the following.
+    In x86, we can declare static data regions.
+    These are analogous to global variables.
+    Data declarations should be preceded by the .data directive.
+    Let's say we have a C program like the following.
 
     <donothing.c>
         int a = 37;
@@ -316,48 +360,43 @@ b. Global Variables
             return a + b;
         }
 
+    The "int a = 37" and "int b = 10" parts are our global variables.
+
     Then the donothing.s file will look like this.
     We will just show the first few lines of the code where the
     variables a and b are defined.
 
     <donothing.s>
-            .globl a
+
             .data
+
+            .globl a
             .align 4
         a:
             .long 37
+
             .globl b
             .align 4
         b:
             .long 10
 
-    Notice how the names a and b first show up with the .globl directive.
-    Then, after the .data directive we align with 4 (just an x86 thing)
-    and declare the data a: and b:.
+    Notice how names a and b first show up with the .globl directive.
+    Then, after the .data directive we align with 4 
+    (just an x86 thing) and declare the data a: and b:.
+    Then, the program can access both a and b without any "$" signs.
 
-    By the way, functions save their local variables right below
-    each of its frame pointer. To give a sketch:
+    For example, in main:
 
-          Stack
-    |               |
-    +---------------+
-    |       10      |  <----- 2nd argument: 12(%ebp)
-    +---------------+
-    |       5       |  <----- 1st argument: 8(%ebp)
-    +---------------+
-    |       RA      |  <----- return address
-    +---------------+
-    |      ebp      |  <----- old ebp value
-    +---------------+
-    |   local var   |  <----- 1st local variable: -4(%ebp)
-    +---------------+
-    |   local var   |  <----- 2nd local variable: -8(%ebp)
+        main:
+            (...)
+            movl a, %edx      # move 37 into %edx register.
+            (...)
 
 ------------------------------------------------------------------------
 3) Arrays
 
-We can declare global arrays as .globl, and this would make each symbol
-in the array global as well. For instance, let's say we have an array of
+We can declare global arrays as .globl, and this makes each symbol
+in the array global as well. For instance, say we have an array of
 size 5 that holds numbers from 1 to 5. Then we have something like:
 
     .globl ary
@@ -391,16 +430,16 @@ with respect to the first element of the array.
 For instance, say we want to move the second element into %eax.
 Then we do something like:
 
-    movl ary+4, %eax
+    movl ary + 4, %eax
 
 For instance, say we want to write a 20 to the 4th element in ary.
 Then we do something like:
 
-    movl $20, ary+12
+    movl $20, ary + 12
 
 Now, we explain how to pass arrays into functions as an agrument.
 Just as we did before, we need to push the arguments into the stack
-before actually calling the function. But what do we push in the case
+before actually calling a function. But what do we push in the case
 of arrays? The answer is the immediate value of the address of the
 first element of the array.
 
@@ -416,7 +455,7 @@ The stack would have to look like this at the moment we enter f.
     +---------------+                        |   2   | ary+4
     |  ary address  |----------------------> |   1   | ary
     +---------------+
-    |               |  <----- esp
+    |       RA      |  <----- esp
     +---------------+ 
     |               |
 
@@ -437,18 +476,63 @@ We need to do:
 Problem 2: Out of Sorts
 ========================================================================
 
+The assembly code in quick.S is commented line-by-line.
+Logic is explained there in detail.
+
+But to give a brief overview:
+    
+    In order to make quicksort work in the usual way (take array,
+    low, high as the three inputs), I had to write another function
+    that does this. I called it "realsort".
+
+    So all that the given "quicksort" does is call "realsort" on
+    int[]a, 0, len(a) - 1.
+
+    Function "realsort" is where we do the recursive calls to sort.
 
 ========================================================================
 Problem 3: It's a cat Jim...
 ========================================================================
+Comments to mcat.S are inside the assembly file.
+Below are the runtimes obtained from 7 runs.
 
+./mcat
+real 0m0.121s
+real 0m0.091s
+real 0m0.104s
+real 0m0.087s
+real 0m0.088s
+real 0m0.098s
+real 0m0.103s
+-------------
+avg: 0m0.099s
 
 ========================================================================
 Problem 4: ...but now as we know it!
 ========================================================================
+Below are the runtimes obtained from 7 runs.
 
+./qcat
+real 0m0.024s
+real 0m0.024s
+real 0m0.024s
+real 0m0.024s
+real 0m0.047s
+real 0m0.051s
+real 0m0.053s
+-------------
+avg: 0m0.031s
 
+We can see that the qcat program is faster than the mcat program. 
+The main reason should be that the qcat program does not have any of
+the startup code pasted inside it, and it does not call the C library
+getchar and putchar.
 
+We can see that the sizes of cat, mcat, and qcat differ as well. 
+ cat: 7340
+mcat: 7320
+qcat:  836
 
+Thank you!
 ========================================================================
-<End of File>
+<End of README>
