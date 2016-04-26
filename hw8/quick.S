@@ -28,25 +28,25 @@ realsort:
     movl  %esp, %ebp          # move esp to ebp
     movl  12(%ebp), %eax      # move lo into eax
     cmpl  %eax, 16(%ebp)      # compare lo, hi
-    jl ELSE1                  # if (hi >= lo):
+    jle ELSE1                 # end if hi <= lo
     subl  $4, %esp            # leave space for int p
     pushl 16(%ebp)            # 3rd arg: hi
     pushl 12(%ebp)            # 2nd arg: lo
     pushl  8(%ebp)            # 1st arg: a[]
     call  partition           # call partition on a, lo, hi
-    addl  $16, %esp           # move esp 12 up
+    addl  $12, %esp           # move esp 12 up
     movl  %eax, -4(%ebp)      # move parition ret val to our local var
     pushl %eax                # 3rd arg: p
     pushl 12(%ebp)            # 2nd arg: lo
     pushl  8(%ebp)            # 1st arg: a[]
     call  realsort            # call realsort on a, lo, p
-    addl  $16, %esp           # move esp 12 up
+    addl  $12, %esp           # move esp 12 up
     pushl 16(%ebp)            # 3rd arg: hi
     addl  $1, -4(%ebp)        # p++
     pushl %eax                # 2nd arg: p + 1
     pushl  8(%ebp)            # 1st arg: a[]
     call  realsort            # call realsort on a, p + 1, hi
-    addl  $16, %esp           # move esp 12 up
+    addl  $12, %esp           # move esp 12 up
 ELSE1:                        # when hi < lo
     leave                     # leave
     ret                       # return to caller
@@ -60,5 +60,6 @@ quicksort:
     pushl $0                  # 2nd arg: 0
     pushl 8(%ebp)             # 1st arg: a[]
     call  realsort             # call realsort on a, 0, n-1
+    addl  $12, %esp
     leave                     # leave
     ret                       # return to caller
