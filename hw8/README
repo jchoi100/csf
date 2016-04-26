@@ -28,6 +28,14 @@ the stack and registers to the state they were before it was called.
 Moreover, before any type of procedure, we must push the original %ebp
 into the stack and move the current %esp into the %ebp.
 
+This procedure is what allows each subroutine to act independently of
+its location on the stack and think as if it is at the top of the stack.
+
+When we call a function, a new stack frame is created at the current
+esp location. Anything that had to do with previous function calls
+are above the stack in this frame, so nothing there should be modified.
+
+
 a. How functions access their parameters
     Before a function call, in the caller, we push the parameters to be 
     used into the stack in reverse order. For example, let's say we want
@@ -61,6 +69,21 @@ a. How functions access their parameters
         d: 20(%ebp)
         e: 24(%ebp)
     If there are more than 5 arguments, the offsets will go 28, 32 ...
+
+To give a quick sketch of the stack when f(10, 5) is called:
+
+          Stack
+    |               |
+    +---------------+
+    |       10      |  <----- 12(%ebp)
+    +---------------+
+    |       5       |  <-----  8(%ebp)
+    +---------------+
+    |       RA      |  <----- return address
+    +---------------+
+    |      ebp      |  <----- old ebp value
+    +---------------+
+    |               |  
 
 b. How functions returns their results
     The result of a function is always assumed to be saved at %eax.
@@ -309,6 +332,24 @@ b. Global Variables
     Notice how the names a and b first show up with the .globl directive.
     Then, after the .data directive we align with 4 (just an x86 thing)
     and declare the data a: and b:.
+
+    By the way, functions save their local variables right below
+    each of its frame pointer. To give a sketch:
+
+          Stack
+    |               |
+    +---------------+
+    |       10      |  <----- 2nd argument: 12(%ebp)
+    +---------------+
+    |       5       |  <----- 1st argument: 8(%ebp)
+    +---------------+
+    |       RA      |  <----- return address
+    +---------------+
+    |      ebp      |  <----- old ebp value
+    +---------------+
+    |   local var   |  <----- 1st local variable: -4(%ebp)
+    +---------------+
+    |   local var   |  <----- 2nd local variable: -8(%ebp)
 
 ------------------------------------------------------------------------
 3) Arrays

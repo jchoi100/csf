@@ -28,8 +28,8 @@ realsort:
     movl  %esp, %ebp          # move esp to ebp
     movl  12(%ebp), %eax      # move lo into eax
     cmpl  %eax, 16(%ebp)      # compare lo, hi
-    jl ELSE1                  # if (hi >= lo):
-    subl  $8, %esp            # leave space for int p
+    jge ELSE1                  # if (hi >= lo):
+    subl  $4, %esp            # leave space for int p
     pushl 16(%ebp)            # 3rd arg: hi
     pushl 12(%ebp)            # 2nd arg: lo
     pushl  8(%ebp)            # 1st arg: a[]
