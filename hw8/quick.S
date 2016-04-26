@@ -54,11 +54,11 @@ ELSE1:                        # when hi < lo
 quicksort:
     pushl %ebp                # push current ebp to stack
     movl  %esp, %ebp          # move esp to ebp
-    movl 12(%ebp), %eax       # eax <- n
-    subl $1, %eax             # eax -= 1
+    movl  12(%ebp), %eax       # eax <- n
+    subl  $1, %eax             # eax -= 1
     pushl %eax                # 3rd arg: n - 1
     pushl $0                  # 2nd arg: 0
     pushl 8(%ebp)             # 1st arg: a[]
-    call realsort             # call realsort on a, 0, n-1
+    call  realsort             # call realsort on a, 0, n-1
     leave                     # leave
     ret                       # return to caller
