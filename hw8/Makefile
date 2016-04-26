@@ -10,7 +10,7 @@ all: sort cat
 
 sort: sort.o quick.o
 
-cat: cat.S
+cat: cat.c
 
 mcat: mcat.S
 	$(CC) -m32 $^ -o $@
