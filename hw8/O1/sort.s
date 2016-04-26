@@ -333,52 +333,29 @@ quicksort:
 	.type	test, @function
 test:
 .LFB13:
-	.cfi_startproc
 	pushl	%esi
-	.cfi_def_cfa_offset 8
-	.cfi_offset 6, -8
 	pushl	%ebx
-	.cfi_def_cfa_offset 12
-	.cfi_offset 3, -12
 	subl	$12, %esp
-	.cfi_def_cfa_offset 24
 	movl	24(%esp), %ebx
 	movl	28(%esp), %esi
 	pushl	%esi
-	.cfi_def_cfa_offset 28
 	pushl	%ebx
-	.cfi_def_cfa_offset 32
 	call	print
 	addl	$8, %esp
-	.cfi_def_cfa_offset 24
 	pushl	%esi
-	.cfi_def_cfa_offset 28
 	pushl	%ebx
-	.cfi_def_cfa_offset 32
 	call	quicksort
 	addl	$8, %esp
-	.cfi_def_cfa_offset 24
 	pushl	%esi
-	.cfi_def_cfa_offset 28
 	pushl	%ebx
-	.cfi_def_cfa_offset 32
 	call	print
 	movl	$10, (%esp)
 	call	putchar
 	addl	$20, %esp
-	.cfi_def_cfa_offset 12
 	popl	%ebx
-	.cfi_restore 3
-	.cfi_def_cfa_offset 8
 	popl	%esi
-	.cfi_restore 6
-	.cfi_def_cfa_offset 4
 	ret
-	.cfi_endproc
-.LFE13:
-	.size	test, .-test
-	.globl	main
-	.type	main, @function
+
 main:
 .LFB14:
 	.cfi_startproc

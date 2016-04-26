@@ -19,29 +19,47 @@
 # some pseudo-code for that recursive function you'll need
 # to write...
 
-	.text
-	.globl	quicksort
+    .text
+    .globl  quicksort
     .globl  realsort
 
-quicksort:
-    pushl %ebp
-    movl  %esp, %ebp
-    pushl %ebx
-
-
-
-
-    leave
-	ret
-
-
 realsort:
-    pushl %ebp
-    movl  %esp, %ebp
-    pushl %ebx
+    pushl %ebp                # push current ebp to stack
+    movl  %esp, %ebp          # move esp to ebp
+    movl  12(%ebp), %eax      # move lo into eax
+    cmpl  %eax, 16(%ebp)      # compare lo, hi
+    jl ELSE1                  # if (hi >= lo):
+    subl  $4, %esp            # leave space for int p
+    pushl 16(%ebp)            # 3rd arg: hi
+    pushl 12(%ebp)            # 2nd arg: lo
+    pushl  8(%ebp)            # 1st arg: a[]
+    call  partition           # call partition on a, lo, hi
+    addl  $12, %esp           # move esp 12 up
+    movl  %eax, -4(%ebp)      # move parition ret val to our local var
+    pushl -4(%ebp)            # 3rd arg: p
+    pushl 12(%ebp)            # 2nd arg: lo
+    pushl  8(%ebp)            # 1st arg: a[]
+    call  realsort            # call realsort on a, lo, p
+    addl  $12, %esp           # move esp 12 up
+    pushl 16(%ebp)            # 3rd arg: hi
+    movl  -4(%ebp), %eax      # move p into eax
+    addl  $1, %eax            # eax = p + 1
+    pushl %eax                # 2nd arg: p + 1
+    pushl  8(%ebp)            # 1st arg: a[]
+    call  realsort            # call realsort on a, p + 1, hi
+    addl  $12, %esp           # move esp 12 up
+ELSE1:                        # when hi < lo
+    leave                     # leave
+    ret                       # return to caller
 
-
-
-
-    leave
-    ret
+quicksort:
+    pushl %ebp                # push current ebp to stack
+    movl  %esp, %ebp          # move esp to ebp
+    movl 12(%ebp), %eax       # eax <- n
+    subl $1, %eax             # eax -= 1
+    pushl %eax                # 3rd arg: n - 1
+    pushl $0                  # 2nd arg: 0
+    pushl 8(%ebp)             # 1st arg: a[]
+    call realsort             # call realsort on a, 0, n-1
+    leave                     # leave
+    ret                       # return to caller
