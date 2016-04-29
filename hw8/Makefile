@@ -9,12 +9,9 @@ ASFLAGS=-m32
 all: sort cat
 
 sort: sort.o quick.o
-
 cat: cat.c
-
 mcat: mcat.S
 	$(CC) -m32 $^ -o $@
-
 qcat: qcat.S
 	$(CC) -m32 -nostdlib $^ -o $@
 
@@ -25,4 +22,4 @@ archive:
 	tar zcvf x86.tar.gz sort.c quick.S cat.c Makefile
 
 submission:
-	tar cvzf cs233-assignment-8-jchoi100.tar.gz Makefile sort.c quick.S cat.c mcat.S qcat.S README
+	tar cvzf cs233-assignment-8-jchoi100.tar.gz README quick.S sort.c cat.c mcat.S qcat.S Makefile

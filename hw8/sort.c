@@ -6,12 +6,12 @@
 
 #define NELEM(x)  (sizeof(x) / sizeof((x)[0]))
 
+void quicksort(int a[], int n);
+
 int tiny[] = {10};
 int random[] = {30, 40, 10, 20, 50, 60, -2, 70};
 int ascending[] = {10, 20, 30, 40, 50, 60};
 int descending[] = {60, 50, 40, 30, 20, 10};
-
-void quicksort(int a[], int n);
 
 int sorted(int a[], int n)
 {
@@ -37,7 +37,7 @@ void print(int a[], int n)
 
 int partition(int a[], int l, int u)
 {
-        assert(l < u);
+	assert(l < u);
 
 	int p = a[l];
 	int i = l + 1;
@@ -69,7 +69,7 @@ void test(int a[], int n)
 
 int main(void)
 {
-        test(tiny, NELEM(tiny));
+	test(tiny, NELEM(tiny));
 	test(random, NELEM(random));
 	test(ascending, NELEM(ascending));
 	test(descending, NELEM(descending));

@@ -51,7 +51,7 @@ realsort:
     addl  $12, %esp           # move esp 12 up
     pushl 16(%ebp)            # 3rd arg: hi
     addl  $1, -4(%ebp)        # p++
-    pushl -4(%ebp)                # 2nd arg: p + 1
+    pushl -4(%ebp)            # 2nd arg: p + 1
     pushl  8(%ebp)            # 1st arg: a[]
     call  realsort            # call realsort on a, p + 1, hi
     addl  $12, %esp           # move esp 12 up
