@@ -59,19 +59,6 @@ int partition(int a[], int l, int u)
 	return j;
 }
 
-// void realsort(int a[], int lo, int hi) {
-// 	if (lo < hi) {
-// 		int p = partition(a, lo, hi);
-// 		realsort(a, lo, p);
-// 		realsort(a, p + 1, hi);
-// 	}
-// }
-
-// void quicksort(int a[], int n) {
-// 	realsort(a, 0, n - 1);
-// }
-
-
 void test(int a[], int n)
 {
 	print(a, n);
