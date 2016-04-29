@@ -469,7 +469,7 @@ For instance, say we want to write 17 to the 3rd element in ary.
 We need to do:
     movl 4(%esp), %eax
     addl $8, %eax
-    movl $3, (%eax)
+    movl $17, (%eax)
 
 
 ========================================================================
