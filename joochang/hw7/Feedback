@@ -1,5 +1,0 @@
-(-1) more than just explaining what the effect of the optimization had, why? Think about vectorization and loop unrolling.
-
-Problem 2 (66 points):
-
-(-2) fails checkstyle; (-12) failed 6/30 tests (issues were in write-allocate/write-back/fifo/4-associative cache and /no-write-allocate/write-through/fifo/4-associative cache);
